@@ -98,243 +98,252 @@ def get_current_task(player):
     return seq[idx]
 
 def compute_final_payoffs(subsession):
-    session = subsession.session
-    if session.vars.get('payoffs_calculated', False): return
-    
-    players = subsession.get_players()
-    active_players = [p for p in players if not p.participant.vars.get('terminate', False)]
-    active_parts = [p.participant for p in active_players]
-    
-    # 1. 建立数据池
-    pool_dictator_sent = [int(p.vars.get('decisions', {}).get('dictator_sent', 0)) for p in active_parts]
-    
-    pool_trust_senders = []
-    pool_trust_receivers = []
-    for p in active_parts:
-        if p.vars.get('trust_role') == 'Sender':
-            pool_trust_senders.append(int(p.vars.get('decisions', {}).get('trust_sent', 0)))
-        else:
-            pool_trust_receivers.append(p.vars.get('decisions', {}).get('trust_return_plan', {}))
-            
-    pool_ult_proposers = []
-    pool_ult_responders = []
-    for p in active_parts:
-        if p.vars.get('ultimatum_role') == 'Proposer':
-            pool_ult_proposers.append(int(p.vars.get('decisions', {}).get('ultimatum_offer', 0)))
-        else:
-            pool_ult_responders.append(int(p.vars.get('decisions', {}).get('ultimatum_mao', 0)))
-
-    def safe_choice(pool, default):
-        return random.choice(pool) if pool else default
-
-    # 2. 计算收益 (Shadow Matching)
-    for pt in active_parts:
-        pt.vars['potential_payoffs'] = {}
-        pt.vars['task_roles'] = {} 
-        pt.vars['task_details'] = {}
+    try:
+        print(f"DEBUG: compute_final_payoffs called for subsession {subsession.id}")
+        session = subsession.session
+        if session.vars.get('payoffs_calculated', False): 
+            print("DEBUG: Payoffs already calculated, skipping")
+            return
         
-        # --- Dictator ---
-        if random.random() < 0.5:
-            sent = int(pt.vars.get('decisions', {}).get('dictator_sent', 0))
-            pt.vars['potential_payoffs']['dictator'] = (Constants.endowment - sent)
-            pt.vars['task_roles']['dictator'] = "Sender"
-            pt.vars['task_details']['dictator'] = {'sent': sent}
-        else:
-            received = safe_choice(pool_dictator_sent, 0)
-            pt.vars['potential_payoffs']['dictator'] = received
-            pt.vars['task_roles']['dictator'] = "Recipient"
-            pt.vars['task_details']['dictator'] = {'received': received}
-
-        # --- Trust ---
-        role = pt.vars.get('trust_role')
-        pt.vars['task_roles']['trust'] = role
+        players = subsession.get_players()
+        print(f"DEBUG: Total players: {len(players)}")
+        active_players = [p for p in players if not p.participant.vars.get('terminate', False)]
+        active_parts = [p.participant for p in active_players]
+        print(f"DEBUG: Active players: {len(active_players)}")
         
-        if role == 'Sender':
-            my_sent = int(pt.vars.get('decisions', {}).get('trust_sent', 0))
-            fallback_plan = {0:0, 25:12, 50:25, 75:37, 100:50} 
-            partner_plan = safe_choice(pool_trust_receivers, fallback_plan)
-            actual_returned = int(partner_plan.get(my_sent, 0))
-            
-            # Bonus logic
-            prediction = int(pt.vars.get('decisions', {}).get('trust_prediction', -999))
-            bonus = 0
-            if abs(prediction - actual_returned) <= Constants.trust_prediction_error:
-                bonus = Constants.trust_prediction_bonus
-            
-            pt.vars['potential_payoffs']['trust'] = (Constants.endowment - my_sent) + actual_returned + bonus
-            pt.vars['task_details']['trust'] = {
-                'my_sent': my_sent, 'actual_returned': actual_returned, 'bonus': bonus
-            }
-        else:
-            partner_sent = safe_choice(pool_trust_senders, 50)
-            my_plan = pt.vars.get('decisions', {}).get('trust_return_plan', {})
-            my_return = int(my_plan.get(partner_sent, 0))
-            pt.vars['potential_payoffs']['trust'] = (partner_sent * Constants.trust_multiplier) - my_return
-            pt.vars['task_details']['trust'] = {
-                'partner_sent': partner_sent, 'my_return': my_return
-            }
-
-        # --- Ultimatum ---
-        role = pt.vars.get('ultimatum_role')
-        pt.vars['task_roles']['ultimatum'] = role
-        if role == 'Proposer':
-            my_offer = int(pt.vars.get('decisions', {}).get('ultimatum_offer', 0))
-            partner_mao = safe_choice(pool_ult_responders, 40)
-            success = my_offer >= partner_mao
-            pt.vars['potential_payoffs']['ultimatum'] = (Constants.endowment - my_offer) if success else 0
-            pt.vars['task_details']['ultimatum'] = {
-                'my_offer': my_offer, 'partner_mao': partner_mao, 'success': success
-            }
-        else:
-            my_mao = int(pt.vars.get('decisions', {}).get('ultimatum_mao', 0))
-            partner_offer = safe_choice(pool_ult_proposers, 50)
-            success = partner_offer >= my_mao
-            pt.vars['potential_payoffs']['ultimatum'] = partner_offer if success else 0
-            pt.vars['task_details']['ultimatum'] = {
-                'partner_offer': partner_offer, 'my_mao': my_mao, 'success': success
-            }
-
-        # --- Risk ---
-        pt.vars['risk_choices_list'] = pt.vars.get('decisions', {}).get('risk_choices', ["A"]*4)
-
-    # 3. 最终抽取与生成解释文案 (【重点修改】：这里统一了命名)
-    for p in players:
-        pt = p.participant
-        if pt.vars.get('terminate', False): continue
+        # 1. 建立数据池
+        pool_dictator_sent = [int(p.vars.get('decisions', {}).get('dictator_sent', 0)) for p in active_parts]
         
-        selected = random.choice(TASKS)
-        tokens = 0
-        explanation = ""
-        final_task_display_name = "" # 用于显示的最终任务名
-        
-        # === Risk (Scenario Selection) ===
-        if selected == 'risk':
-            sc_idx = random.randint(0, 3)
-            choice = pt.vars['risk_choices_list'][sc_idx]
-            
-            is_win = False
-            if choice == "A":
-                tokens = Constants.risk_sure
-                outcome_text = f"Since you chose Option A (Safe), you received the guaranteed {tokens} tokens."
+        pool_trust_senders = []
+        pool_trust_receivers = []
+        for p in active_parts:
+            if p.vars.get('trust_role') == 'Sender':
+                pool_trust_senders.append(int(p.vars.get('decisions', {}).get('trust_sent', 0)))
             else:
-                is_win = random.random() < 0.5
-                win_amt = Constants.risk_wins[sc_idx]
-                tokens = win_amt if is_win else 0
-                outcome_text = f"You chose Option B (Risky). The random coin flip resulted in a {'WIN' if is_win else 'LOSS'}."
-            
-            explanation = (
-                f"The system randomly selected <b>Scenario {sc_idx + 1}</b> for payment.<br>"
-                f"{outcome_text}<br>"
-                f"<b>Total Earnings: {tokens} tokens.</b>"
-            )
-            # 这里的名字改成了 "Scenario Selection"
-            final_task_display_name = f"Scenario Selection (Scenario {sc_idx + 1})"
-            
-        # === Dictator (Allocation Task) ===
-        elif selected == 'dictator':
-            role = pt.vars['task_roles']['dictator']
-            details = pt.vars['task_details']['dictator']
-            tokens = pt.vars['potential_payoffs']['dictator']
-            
-            if role == "Sender":
-                sent = details['sent']
-                explanation = (
-                    f"You were randomly assigned the role of <b>Sender</b>.<br>"
-                    f"You chose to give <b>{sent} tokens</b> to the Receiver.<br>"
-                    f"Therefore, you kept the rest: 100 - {sent} = <b>{tokens} tokens</b>."
-                )
-            else:
-                received = details['received']
-                explanation = (
-                    f"You were randomly assigned the role of <b>Receiver</b>.<br>"
-                    f"The Sender matched with you chose to give you <b>{received} tokens</b>.<br>"
-                    f"Therefore, your earnings are <b>{tokens} tokens</b>."
-                )
-            # 这里的名字改成了 "Allocation Task"
-            final_task_display_name = f"Allocation Task ({role})"
-            
-        # === Trust (Investment Task) ===
-        elif selected == 'trust':
-            role = pt.vars['task_roles']['trust']
-            details = pt.vars['task_details']['trust']
-            tokens = pt.vars['potential_payoffs']['trust']
-            
-            if role == "Sender":
-                my_sent = details['my_sent']
-                actual_returned = details['actual_returned']
-                bonus = details['bonus']
-                explanation = (
-                    f"You were the <b>Sender</b>.<br>"
-                    f"You sent <b>{my_sent} tokens</b>. The Receiver decided to return <b>{actual_returned} tokens</b> to you.<br>"
-                    f"Game Earnings: (100 - {my_sent}) + {actual_returned} = {tokens - bonus}.<br>"
-                )
-                if bonus > 0:
-                    explanation += f"<span class='text-success'><b>Bonus:</b> Your prediction was correct! (+{bonus} tokens).</span><br>"
-                explanation += f"<b>Total Earnings: {tokens} tokens.</b>"
-            else:
-                partner_sent = details['partner_sent']
-                my_return = details['my_return']
-                explanation = (
-                    f"You were the <b>Receiver</b>.<br>"
-                    f"The Sender matched with you sent <b>{partner_sent} tokens</b> (which tripled to {partner_sent * 3}).<br>"
-                    f"Based on your strategy plan for this amount, you decided to return <b>{my_return} tokens</b>.<br>"
-                    f"You kept the rest: {partner_sent * 3} - {my_return} = <b>{tokens} tokens</b>."
-                )
-            # 这里的名字改成了 "Investment Task"
-            final_task_display_name = f"Investment Task ({role})"
-            
-        # === Ultimatum (Proposal / Response Task) ===
-        elif selected == 'ultimatum':
-            role = pt.vars['task_roles']['ultimatum']
-            details = pt.vars['task_details']['ultimatum']
-            tokens = pt.vars['potential_payoffs']['ultimatum']
-            
-            if role == "Proposer":
-                my_offer = details['my_offer']
-                partner_mao = details['partner_mao']
-                success = details['success']
-                result_str = "ACCEPTED" if success else "REJECTED"
-                color = "text-success" if success else "text-danger"
-                explanation = (
-                    f"You were the <b>Proposer</b>.<br>"
-                    f"You offered <b>{my_offer} tokens</b>. The Responder's Minimum Acceptable Offer (MAO) was <b>{partner_mao}</b>.<br>"
-                    f"Result: Your offer was <b class='{color}'>{result_str}</b>.<br>"
-                )
-                if success:
-                    explanation += f"You kept: 100 - {my_offer} = <b>{tokens} tokens</b>."
-                else:
-                    explanation += "Both of you received <b>0 tokens</b>."
-                # Proposer 看到 "Proposal Task"
-                final_task_display_name = f"Proposal Task ({role})"
+                pool_trust_receivers.append(p.vars.get('decisions', {}).get('trust_return_plan', {}))
                 
+        pool_ult_proposers = []
+        pool_ult_responders = []
+        for p in active_parts:
+            if p.vars.get('ultimatum_role') == 'Proposer':
+                pool_ult_proposers.append(int(p.vars.get('decisions', {}).get('ultimatum_offer', 0)))
             else:
-                partner_offer = details['partner_offer']
-                my_mao = details['my_mao']
-                success = details['success']
-                result_str = "ACCEPTED" if success else "REJECTED"
-                color = "text-success" if success else "text-danger"
-                explanation = (
-                    f"You were the <b>Responder</b>.<br>"
-                    f"The Proposer offered <b>{partner_offer} tokens</b>. Your Minimum Acceptable Offer (MAO) was <b>{my_mao}</b>.<br>"
-                    f"Result: The offer was <b class='{color}'>{result_str}</b>.<br>"
-                )
-                if success:
-                    explanation += f"You received the offer of <b>{tokens} tokens</b>."
-                else:
-                    explanation += "Both of you received <b>0 tokens</b>."
-                # Responder 看到 "Response Task"
-                final_task_display_name = f"Response Task ({role})"
+                pool_ult_responders.append(int(p.vars.get('decisions', {}).get('ultimatum_mao', 0)))
 
-        # 4. 存入 participant.vars
-        p.paid_task = final_task_display_name
-        p.paid_tokens = int(tokens)
-        p.payoff = tokens
+        def safe_choice(pool, default):
+            return random.choice(pool) if pool else default
+
+        # 2. 计算收益 (Shadow Matching)
+        for pt in active_parts:
+            pt.vars['potential_payoffs'] = {}
+            pt.vars['task_roles'] = {} 
+            pt.vars['task_details'] = {}
+            
+            # --- Dictator ---
+            if random.random() < 0.5:
+                sent = int(pt.vars.get('decisions', {}).get('dictator_sent', 0))
+                pt.vars['potential_payoffs']['dictator'] = (Constants.endowment - sent)
+                pt.vars['task_roles']['dictator'] = "Sender"
+                pt.vars['task_details']['dictator'] = {'sent': sent}
+            else:
+                received = safe_choice(pool_dictator_sent, 0)
+                pt.vars['potential_payoffs']['dictator'] = received
+                pt.vars['task_roles']['dictator'] = "Recipient"
+                pt.vars['task_details']['dictator'] = {'received': received}
+
+            # --- Trust ---
+            role = pt.vars.get('trust_role')
+            pt.vars['task_roles']['trust'] = role
+            
+            if role == 'Sender':
+                my_sent = int(pt.vars.get('decisions', {}).get('trust_sent', 0))
+                fallback_plan = {0:0, 25:12, 50:25, 75:37, 100:50} 
+                partner_plan = safe_choice(pool_trust_receivers, fallback_plan)
+                actual_returned = int(partner_plan.get(my_sent, 0))
+                
+                # Bonus logic
+                prediction = int(pt.vars.get('decisions', {}).get('trust_prediction', -999))
+                bonus = 0
+                if abs(prediction - actual_returned) <= Constants.trust_prediction_error:
+                    bonus = Constants.trust_prediction_bonus
+                
+                pt.vars['potential_payoffs']['trust'] = (Constants.endowment - my_sent) + actual_returned + bonus
+                pt.vars['task_details']['trust'] = {
+                    'my_sent': my_sent, 'actual_returned': actual_returned, 'bonus': bonus
+                }
+            else:
+                partner_sent = safe_choice(pool_trust_senders, 50)
+                my_plan = pt.vars.get('decisions', {}).get('trust_return_plan', {})
+                my_return = int(my_plan.get(partner_sent, 0))
+                pt.vars['potential_payoffs']['trust'] = (partner_sent * Constants.trust_multiplier) - my_return
+                pt.vars['task_details']['trust'] = {
+                    'partner_sent': partner_sent, 'my_return': my_return
+                }
+
+            # --- Ultimatum ---
+            role = pt.vars.get('ultimatum_role')
+            pt.vars['task_roles']['ultimatum'] = role
+            if role == 'Proposer':
+                my_offer = int(pt.vars.get('decisions', {}).get('ultimatum_offer', 0))
+                partner_mao = safe_choice(pool_ult_responders, 40)
+                success = my_offer >= partner_mao
+                pt.vars['potential_payoffs']['ultimatum'] = (Constants.endowment - my_offer) if success else 0
+                pt.vars['task_details']['ultimatum'] = {
+                    'my_offer': my_offer, 'partner_mao': partner_mao, 'success': success
+                }
+            else:
+                my_mao = int(pt.vars.get('decisions', {}).get('ultimatum_mao', 0))
+                partner_offer = safe_choice(pool_ult_proposers, 50)
+                success = partner_offer >= my_mao
+                pt.vars['potential_payoffs']['ultimatum'] = partner_offer if success else 0
+                pt.vars['task_details']['ultimatum'] = {
+                    'partner_offer': partner_offer, 'my_mao': my_mao, 'success': success
+                }
+
+            # --- Risk ---
+            pt.vars['risk_choices_list'] = pt.vars.get('decisions', {}).get('risk_choices', ["A"]*4)
+
+        # 3. 最终抽取与生成解释文案
+        for p in players:
+            pt = p.participant
+            if pt.vars.get('terminate', False): continue
+            
+            selected = random.choice(TASKS)
+            tokens = 0
+            explanation = ""
+            final_task_display_name = ""
+            
+            # === Risk (Scenario Selection) ===
+            if selected == 'risk':
+                sc_idx = random.randint(0, 3)
+                choice = pt.vars['risk_choices_list'][sc_idx]
+                
+                is_win = False
+                if choice == "A":
+                    tokens = Constants.risk_sure
+                    outcome_text = f"Since you chose Option A (Safe), you received the guaranteed {tokens} tokens."
+                else:
+                    is_win = random.random() < 0.5
+                    win_amt = Constants.risk_wins[sc_idx]
+                    tokens = win_amt if is_win else 0
+                    outcome_text = f"You chose Option B (Risky). The random coin flip resulted in a {'WIN' if is_win else 'LOSS'}."
+                
+                explanation = (
+                    f"The system randomly selected <b>Scenario {sc_idx + 1}</b> for payment.<br>"
+                    f"{outcome_text}<br>"
+                    f"<b>Total Earnings: {tokens} tokens.</b>"
+                )
+                final_task_display_name = f"Scenario Selection (Scenario {sc_idx + 1})"
+                
+            # === Dictator (Allocation Task) ===
+            elif selected == 'dictator':
+                role = pt.vars['task_roles']['dictator']
+                details = pt.vars['task_details']['dictator']
+                tokens = pt.vars['potential_payoffs']['dictator']
+                
+                if role == "Sender":
+                    sent = details['sent']
+                    explanation = (
+                        f"You were randomly assigned the role of <b>Sender</b>.<br>"
+                        f"You chose to give <b>{sent} tokens</b> to the Receiver.<br>"
+                        f"Therefore, you kept the rest: 100 - {sent} = <b>{tokens} tokens</b>."
+                    )
+                else:
+                    received = details['received']
+                    explanation = (
+                        f"You were randomly assigned the role of <b>Receiver</b>.<br>"
+                        f"The Sender matched with you chose to give you <b>{received} tokens</b>.<br>"
+                        f"Therefore, your earnings are <b>{tokens} tokens</b>."
+                    )
+                final_task_display_name = f"Allocation Task ({role})"
+                
+            # === Trust (Investment Task) ===
+            elif selected == 'trust':
+                role = pt.vars['task_roles']['trust']
+                details = pt.vars['task_details']['trust']
+                tokens = pt.vars['potential_payoffs']['trust']
+                
+                if role == "Sender":
+                    my_sent = details['my_sent']
+                    actual_returned = details['actual_returned']
+                    bonus = details['bonus']
+                    explanation = (
+                        f"You were the <b>Sender</b>.<br>"
+                        f"You sent <b>{my_sent} tokens</b>. The Receiver decided to return <b>{actual_returned} tokens</b> to you.<br>"
+                        f"Game Earnings: (100 - {my_sent}) + {actual_returned} = {tokens - bonus}.<br>"
+                    )
+                    if bonus > 0:
+                        explanation += f"<span class='text-success'><b>Bonus:</b> Your prediction was correct! (+{bonus} tokens).</span><br>"
+                    explanation += f"<b>Total Earnings: {tokens} tokens.</b>"
+                else:
+                    partner_sent = details['partner_sent']
+                    my_return = details['my_return']
+                    explanation = (
+                        f"You were the <b>Receiver</b>.<br>"
+                        f"The Sender matched with you sent <b>{partner_sent} tokens</b> (which tripled to {partner_sent * 3}).<br>"
+                        f"Based on your strategy plan for this amount, you decided to return <b>{my_return} tokens</b>.<br>"
+                        f"You kept the rest: {partner_sent * 3} - {my_return} = <b>{tokens} tokens</b>."
+                    )
+                final_task_display_name = f"Investment Task ({role})"
+                
+            # === Ultimatum (Proposal / Response Task) ===
+            elif selected == 'ultimatum':
+                role = pt.vars['task_roles']['ultimatum']
+                details = pt.vars['task_details']['ultimatum']
+                tokens = pt.vars['potential_payoffs']['ultimatum']
+                
+                if role == "Proposer":
+                    my_offer = details['my_offer']
+                    partner_mao = details['partner_mao']
+                    success = details['success']
+                    result_str = "ACCEPTED" if success else "REJECTED"
+                    color = "text-success" if success else "text-danger"
+                    explanation = (
+                        f"You were the <b>Proposer</b>.<br>"
+                        f"You offered <b>{my_offer} tokens</b>. The Responder's Minimum Acceptable Offer (MAO) was <b>{partner_mao}</b>.<br>"
+                        f"Result: Your offer was <b class='{color}'>{result_str}</b>.<br>"
+                    )
+                    if success:
+                        explanation += f"You kept: 100 - {my_offer} = <b>{tokens} tokens</b>."
+                    else:
+                        explanation += "Both of you received <b>0 tokens</b>."
+                    final_task_display_name = f"Proposal Task ({role})"
+                    
+                else:
+                    partner_offer = details['partner_offer']
+                    my_mao = details['my_mao']
+                    success = details['success']
+                    result_str = "ACCEPTED" if success else "REJECTED"
+                    color = "text-success" if success else "text-danger"
+                    explanation = (
+                        f"You were the <b>Responder</b>.<br>"
+                        f"The Proposer offered <b>{partner_offer} tokens</b>. Your Minimum Acceptable Offer (MAO) was <b>{my_mao}</b>.<br>"
+                        f"Result: The offer was <b class='{color}'>{result_str}</b>.<br>"
+                    )
+                    if success:
+                        explanation += f"You received the offer of <b>{tokens} tokens</b>."
+                    else:
+                        explanation += "Both of you received <b>0 tokens</b>."
+                    final_task_display_name = f"Response Task ({role})"
+
+            # 4. 存入 participant.vars
+            p.paid_task = final_task_display_name
+            p.paid_tokens = int(tokens)
+            p.payoff = tokens
+            
+            pt.vars['paid_task'] = final_task_display_name
+            pt.vars['paid_tokens'] = int(tokens)
+            pt.vars['payoff_explanation'] = explanation
         
-        pt.vars['paid_task'] = final_task_display_name
-        pt.vars['paid_tokens'] = int(tokens)
-        pt.vars['payoff_explanation'] = explanation
-    
-    session.vars['payoffs_calculated'] = True
+        session.vars['payoffs_calculated'] = True
+        print("DEBUG: Payoffs calculation completed successfully")
+        
+    except Exception as e:
+        import traceback
+        print(f"ERROR in compute_final_payoffs: {e}")
+        traceback.print_exc()
+        session = subsession.session
+        session.vars['payoffs_calculated'] = True  # Mark as done even on error to prevent infinite loop
 
 # --- Pages ---
 
@@ -439,15 +448,20 @@ class Risk(Page):
         player.participant.vars['decisions']['risk_choices'] = [player.risk_choice_1, player.risk_choice_2, player.risk_choice_3, player.risk_choice_4]
 
 class ComputePayoffsWaitPage(Page):
+    form_model = 'player'
+    form_fields = []  # No form fields needed, just a placeholder
+    
     @staticmethod
     def is_displayed(player): 
         return player.round_number == Constants.num_rounds and not player.participant.vars.get('terminate', False)
     
     @staticmethod
     def before_next_page(player, timeout_happened):
+        print(f"DEBUG: ComputePayoffsWaitPage.before_next_page called for player {player.id}")
         # 计算该玩家所在subsession的最终收益
         subsession = player.subsession
         compute_final_payoffs(subsession)
+        print(f"DEBUG: compute_final_payoffs completed for player {player.id}")
 
 page_sequence = [
     ShuffleWaitPage,

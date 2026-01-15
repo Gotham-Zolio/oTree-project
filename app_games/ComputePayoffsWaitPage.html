@@ -1,7 +1,20 @@
-{% extends "otree/WaitPage.html" %}
+{% extends "global/Page.html" %}
 
 {% block title %}Calculating Payoffs{% endblock %}
 
 {% block content %}
     <p>Please wait while the system calculates the payoffs and performs the random matching.</p>
+    
+    <button id="autoSubmitBtn" class="otree-btn-next btn btn-primary" style="display:none;">Next</button>
+    
+    <script>
+        window.onload = function() {
+            console.log("ComputePayoffsWaitPage loaded, waiting 1 second before auto-submit");
+            // 延迟1秒以确保后端有时间计算收益
+            setTimeout(function() {
+                console.log("Auto-submitting ComputePayoffsWaitPage");
+                document.getElementById("autoSubmitBtn").click();
+            }, 1000);
+        };
+    </script>
 {% endblock %}

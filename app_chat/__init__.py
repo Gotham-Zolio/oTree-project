@@ -14,7 +14,7 @@ class Constants(BaseConstants):
     name_in_url = 'app_chat'
     players_per_group = None
     num_rounds = 1
-    chat_seconds = 6 # 10min
+    chat_seconds = 60 # 10min
 
     # --- AI Prompts (ENGLISH, as required) ---
     # Group 2 & 3: MindHeart Assistant (same prompt)
@@ -284,64 +284,6 @@ def live_chat(player, data):
             timestamp_ai = time.strftime("%H:%M:%S")
             player.chat_log += f"[{timestamp_ai}] Partner: {ai_text}\n"
             
-            # 使用 live_method 的特性，单次返回多个消息给同一个人是无法直接做到的(字典key不能重复)。
-            # 但这里我们是发送两条不同的消息给同一个人（如果需要的话）。
-            # 不过在这个场景下，AI回复是追加的。
-            # 为了更好的用户体验，应该先返回用户的消息显示，然后再返回AI的消息。
-            # 但普通同步模式下只能返回一次。
-            # 这里的trick是：如果作为同步函数返回，我们只能返回这一个字典。
-            # 如果要模拟 "先显示我的，再显示AI的"，我们可以在前端处理成两条。
-            # 或者我们简单地将 AI 的回复作为第二条消息包含在返回中? 不行，key冲突。
-            
-            # 正确的做法：
-            # 在同步 live_method 中，我们无法像生成器那样 "先发一个，停顿，再发一个"。
-            # 我们只能返回一个包含所有接收者数据的字典。
-            # 对于 AI 回复，通常我们希望能产生"正在输入"或延迟的效果，但在同步函数里做不到。
-            # 我们可以直接发回 AI 的回复，前端会几乎同时收到 "Me:..." 和 "Partner:..."。
-            # 为了区分，我们可以不在这里再次发 response_to_self（因为前端其实可以直接乐观更新），
-            # 但既然我们约定了后端确认，最好的办法是只发一条消息给前端，包含 {me_msg: ..., partner_msg: ...} ? 
-            # 不，前端逻辑是针对单条 msg 的。
-            
-            # 解决方案：因为 key 是 id_in_group，同一个 id 只能有一个 value。
-            # 如果我们要发两条给同一个人，我们需要把 value 变成 list 吗？ oTree 是否支持 list of messages?
-            # 查阅 oTree 源码或文档：通常 value 是 payload data。
-            # 如果前端 liveRecv 能处理 list，我们可以发 list。
-            # 但这里的 Chat.html 中 window.liveRecv = function(data) { if (data.type === 'new_message') ... }
-            # 它只处理单个对象。
-            
-            # 既然如此，对于 AI 组，我们把 AI 的回复也直接塞给该玩家。
-            # 但我们已经在 response[player.id_in_group] 赋值了 response_to_self。
-            # 覆盖它会导致丢失。
-            
-            # 办法: 既然 oTree 不支持 sync generator，而我们需要发送两条逻辑独立的消息（确认自己的发送，和接收AI回复）。
-            # 我们可以把 AI 回复合并到 response_to_self 中吗？
-            # 或者，前端其实不需要后端回传 "Me: ..." 这一条，因为前端已经展示了。
-            # 但是代码里有 `response_to_self` 用来确认。
-            
-            # 让我们仔细看之前的 generator 代码：
-            # yield {player.id_in_group: response_to_self}
-            # ...
-            # yield {player.id_in_group: ai_response}
-            
-            # 如果改成同步 return，我们可以尝试返回一个列表给该用户？ oTree 可能会把整个列表作为 data 发给前端。
-            # 让我们修改前端 liveRecv 来支持接收列表，或者我们直接修改后端逻辑。
-            
-            # 最稳妥的方法（不改前端太多）：
-            # 修改 Chat.html 前端，让它乐观显示自己的消息（这一点其实已经在 appendMessage 调用前做了吗？不，trySend 只是调了 liveSend）。
-            # 之前的前端代码 trySend -> liveSend. 没有 appendMessage. appendMessage 是在 liveRecv 里。
-            
-            # 所以后端必须回显。
-            # 既然后端只能通过 return dict 发送一次，且 key 唯一。
-            # 我们将 value 改成一个 列表 [msg1, msg2]。
-            
-            # 并在前端修改 liveRecv 来处理数组。
-            
-            # 但为了最小化修改，还有一个办法：
-            # AI 组我们只发 AI 的回复？不行，那自己的消息就不显示了。
-            
-            # 鉴于这是一个 "Debug" 阶段，我决定修改前端 liveRecv 能够处理数组。
-            # 然后后端返回一个 list 给该用户。
-            
             response[player.id_in_group] = [
                 response_to_self,
                 {
@@ -368,7 +310,28 @@ class Introduction(Page):
     
     @staticmethod
     def vars_for_template(player):
-        cond = player.participant.vars.get('condition') or player.field_maybe_none('condition')
+        # 确保condition已被分配
+        cond = player.participant.vars.get('condition')
+        if not cond:
+            # 如果还没分配，先进行分配
+            import random
+            subsession = player.subsession
+            all_players = subsession.get_players()
+            
+            conditions = ["Group 1", "Group 1", "Group 2", "Group 3", "Group 4"]
+            full_conditions = (conditions * (len(all_players)//5 + 1))[:len(all_players)]
+            random.shuffle(full_conditions)
+            
+            # 修正：确保 Group 1 的人数是偶数
+            g1_indices = [i for i, c in enumerate(full_conditions) if c == "Group 1"]
+            if len(g1_indices) % 2 != 0:
+                full_conditions[g1_indices[-1]] = "Group 2"
+
+            for p, c in zip(all_players, full_conditions):
+                p.participant.vars['condition'] = c
+        
+        # 现在condition已分配，获取对应的标签
+        cond = player.participant.vars.get('condition')
         
         if cond == "Group 4":
             intro_objective = "discuss various common scientific topics (e.g., from biology, astronomy, or physics)"
@@ -451,9 +414,57 @@ class TopicRole(Page):
     
     @staticmethod
     def vars_for_template(player):
-        # Use database field as fallback with field_maybe_none()
-        role = player.participant.vars.get('chat_role') or player.field_maybe_none('chat_role')
-        cond = player.participant.vars.get('condition') or player.field_maybe_none('condition')
+        # 确保 condition 和 role 已被分配
+        cond = player.participant.vars.get('condition')
+        role = player.participant.vars.get('chat_role')
+        
+        if not cond or not role:
+            # 如果还没分配，先进行分配
+            import random
+            subsession = player.subsession
+            all_players = subsession.get_players()
+            
+            conditions = ["Group 1", "Group 1", "Group 2", "Group 3", "Group 4"]
+            full_conditions = (conditions * (len(all_players)//5 + 1))[:len(all_players)]
+            random.shuffle(full_conditions)
+            
+            # 修正：确保 Group 1 的人数是偶数
+            g1_indices = [i for i, c in enumerate(full_conditions) if c == "Group 1"]
+            if len(g1_indices) % 2 != 0:
+                full_conditions[g1_indices[-1]] = "Group 2"
+
+            for p, c in zip(all_players, full_conditions):
+                p.participant.vars['condition'] = c
+                
+                # 角色分配逻辑
+                if c == 'Group 1':
+                    p.participant.vars['chat_role'] = None
+                elif c == 'Group 4':
+                    p.participant.vars['chat_role'] = 'Listener'
+                else:
+                    p.participant.vars['chat_role'] = 'Sharer'
+            
+            # 对 Group 1 进行配对并分配角色
+            g1_players = [p for p in all_players if p.participant.vars['condition'] == 'Group 1']
+            random.shuffle(g1_players)
+            
+            for i in range(0, len(g1_players), 2):
+                if i+1 < len(g1_players):
+                    p1 = g1_players[i]
+                    p2 = g1_players[i+1]
+                    
+                    roles = ['Sharer', 'Listener']
+                    random.shuffle(roles)
+                    
+                    p1.participant.vars['chat_role'] = roles[0]
+                    p2.participant.vars['chat_role'] = roles[1]
+                    
+                    p1.participant.vars['chat_partner_id'] = p2.id_in_group
+                    p2.participant.vars['chat_partner_id'] = p1.id_in_group
+        
+        # 现在 role 和 cond 已确保被分配
+        cond = player.participant.vars.get('condition')
+        role = player.participant.vars.get('chat_role')
         
         # Generate role-specific instructions per SCREEN 2.2 (Topic and Role Instructions)
         if role == "Sharer" and cond in ["Group 1", "Group 2", "Group 3"]:
@@ -468,6 +479,19 @@ class TopicRole(Page):
             topic=player.get_topic_label(),
             show_text=show_text
         )
+
+class ChatWaitPage(WaitPage):
+    title_text = "Waiting for your chat partner..."
+    body_text = "Please wait. When your chat partner is ready, the chat will start automatically (10-minute countdown)."
+
+    # Set page timeout; after WaitPage passes, both players start the countdown simultaneously
+    timeout_seconds = Constants.chat_seconds
+    timer_text = "Time remaining in this round:"
+
+    @staticmethod
+    def is_displayed(player):
+        # Skip if this participant has been marked to terminate the experiment
+        return not player.participant.vars.get('terminate', False)
 
 class Chat(Page):
     form_model = 'player'
@@ -552,4 +576,4 @@ class Chat(Page):
             chatSeconds=Constants.chat_seconds
         )
 
-page_sequence = [Introduction, TopicRole, Chat]
+page_sequence = [Introduction, TopicRole, ChatWaitPage, Chat]
