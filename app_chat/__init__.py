@@ -14,7 +14,7 @@ class Constants(BaseConstants):
     name_in_url = 'app_chat'
     players_per_group = None
     num_rounds = 1
-    chat_seconds = 60 # 10min
+    chat_seconds = 6 # 10min
 
     # --- AI Prompts (ENGLISH, as required) ---
     # Group 2 & 3: MindHeart Assistant (same prompt)

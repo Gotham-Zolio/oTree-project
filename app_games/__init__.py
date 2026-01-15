@@ -447,21 +447,37 @@ class Risk(Page):
         ensure_participant_vars(player.participant)
         player.participant.vars['decisions']['risk_choices'] = [player.risk_choice_1, player.risk_choice_2, player.risk_choice_3, player.risk_choice_4]
 
-class ComputePayoffsWaitPage(Page):
-    form_model = 'player'
-    form_fields = []  # No form fields needed, just a placeholder
+class ComputePayoffsWaitPage(WaitPage):
+    title_text = "Calculating Payoffs"
+    body_text = "Please wait while the system calculates the payoffs and performs the random matching."
     
     @staticmethod
     def is_displayed(player): 
         return player.round_number == Constants.num_rounds and not player.participant.vars.get('terminate', False)
     
     @staticmethod
-    def before_next_page(player, timeout_happened):
-        print(f"DEBUG: ComputePayoffsWaitPage.before_next_page called for player {player.id}")
-        # 计算该玩家所在subsession的最终收益
-        subsession = player.subsession
+    def after_all_players_arrive(group):
+        """所有players都到达时，统一计算payoffs"""
+        subsession = group.subsession
+        print(f"DEBUG: ComputePayoffsWaitPage.after_all_players_arrive called for subsession {subsession.id}")
         compute_final_payoffs(subsession)
-        print(f"DEBUG: compute_final_payoffs completed for player {player.id}")
+        print(f"DEBUG: compute_final_payoffs completed for subsession {subsession.id}")
+
+class Results(Page):
+    @staticmethod
+    def is_displayed(player):
+        return player.round_number == Constants.num_rounds and not player.participant.vars.get('terminate', False)
+    
+    @staticmethod
+    def vars_for_template(player):
+        pt = player.participant
+        paid_task = pt.vars.get('paid_task', 'Unknown')
+        paid_tokens = pt.vars.get('paid_tokens', 0)
+        
+        return dict(
+            paid_task=paid_task,
+            paid_tokens=paid_tokens
+        )
 
 page_sequence = [
     ShuffleWaitPage,
@@ -469,5 +485,6 @@ page_sequence = [
     TrustSenderDecision, TrustSenderPrediction, TrustReceiverPlan,
     UltimatumProposer, UltimatumResponder,
     Risk,
-    ComputePayoffsWaitPage
+    ComputePayoffsWaitPage,
+    Results
 ]
