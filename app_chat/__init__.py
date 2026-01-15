@@ -183,21 +183,24 @@ class Player(BasePlayer):
         # Try participant.vars first, fallback to database field using field_maybe_none()
         cond = self.participant.vars.get('condition') or self.field_maybe_none('condition')
         if cond == "Group 1":
-            return "another human participant"
+            return "Another human participant randomly matched to you"
         elif cond == "Group 2":
-            return "a conversational partner"  # conceal AI identity
-        elif cond in ("Group 3", "Group 4"):
-            return "an AI chatbot"
+            return "A conversational partner"  # conceal AI identity
+        elif cond == "Group 3":
+            return "AI chatbot"
+        elif cond == "Group 4":
+            return "AI chatbot"
         else:
-            return "a conversational partner"  # default fallback
+            return None
 
     def get_topic_label(self):
         # Try participant.vars first, fallback to database field using field_maybe_none()
         cond = self.participant.vars.get('condition') or self.field_maybe_none('condition')
         if cond == "Group 4":
-            return "various common scientific topics (e.g., biology, astronomy)"
+            return "various common scientific topics (e.g., from biology, astronomy, or physics)."
         else:
-            return "something that has recently been bothering you"
+            return "something that has recently been bothering you — a worry, a troubling issue, or an event that has made you feel upset."
+
 
 
 def parse_chat_log(log_str):
@@ -367,13 +370,10 @@ class Introduction(Page):
     def vars_for_template(player):
         cond = player.participant.vars.get('condition') or player.field_maybe_none('condition')
         
-        intro_objective = "Engage in a conversation with your partner."
         if cond == "Group 4":
-             intro_objective = "Discuss scientific topics with a digital knowledge base."
-        elif cond in ["Group 2", "Group 3"]:
-             intro_objective = "Engage in a conversation with an automated assistant."
+            intro_objective = "discuss various common scientific topics (e.g., from biology, astronomy, or physics)"
         else:
-             intro_objective = "Engage in a conversation with another participant."
+            intro_objective = "discuss something that has recently been bothering you — a worry, a troubling issue, or an event that has made you feel upset."
              
         return dict(
             intro_objective=intro_objective,
@@ -453,16 +453,12 @@ class TopicRole(Page):
         role = player.participant.vars.get('chat_role') or player.field_maybe_none('chat_role')
         cond = player.participant.vars.get('condition') or player.field_maybe_none('condition')
         
-        # 根据角色生成提示语
-        if role == "Sharer":
-            show_text = "Your Role: Please start the conversation by describing something that has recently been bothering you."
+        # Generate role-specific instructions per SCREEN 2.2 (Topic and Role Instructions)
+        if role == "Sharer" and cond in ["Group 1", "Group 2", "Group 3"]:
+            show_text = "Please start the conversation by describing something that has recently been bothering you - a worry, a troubling issue, or an event that has made you feel upset. Your partner's role is to listen and respond to you."
         else:
-            show_text = "Your Role: Your partner will start the conversation. Your role is to listen and respond."
+            show_text = "Your partner will start the conversation. Your role is to listen and respond."
 
-        if cond == "Group 4":
-            show_text = "Your Role: Please discuss scientific topics."
-
-        # 【修复】这里传入所有后续页面需要的变量
         return dict(
             role=role,
             condition=cond,
@@ -485,17 +481,15 @@ class Chat(Page):
         role = player.participant.vars.get('chat_role') or player.field_maybe_none('chat_role')
         cond = player.participant.vars.get('condition') or player.field_maybe_none('condition')
         
-        starter_text = "Please start typing..."
-        if cond == "Group 4":
-            starter_text = "Please discuss scientific topics (e.g., biology, astronomy)."
-        elif role == "Sharer":
-            starter_text = "Please describe what is bothering you."
-        else:
-            starter_text = "Please wait for your partner to start."
-        
-        # 简单传递历史记录以便前端恢复 (可选优化)
-        # 这里为了保持 minimal change，我们暂不传完整历史供前端渲染
-        # 但必须把 chat_log 从 form_fields 移除，防止覆盖
+        # Chat window starter text per SCREEN 2.3 (Chat Window Instructions)
+        # Sharer (Groups 1, 2, 3): Standard bothering you text
+        # Listener (Group 1, Group 4): Your partner will start text
+        if role == "Sharer" and cond in ["Group 1", "Group 2", "Group 3"]:
+            starter_text = "Please start the conversation by describing something that has recently been bothering you - a worry, a troubling issue, or an event that has made you feel upset. Your partner's role is to listen and respond to you."
+        elif role == "Sharer" and cond == "Group 4":
+            starter_text = "Please start the conversation about scientific topics. Your partner's role is to listen and respond to you."
+        else:  # Listener for Groups 1 and 4
+            starter_text = "Your partner will start the conversation. Your role is to listen and respond."
             
         return dict(
             role=role,
