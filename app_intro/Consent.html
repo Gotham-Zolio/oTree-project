@@ -1,0 +1,20 @@
+{% extends "global/Page.html" %}
+{% block title %}Informed Consent Form{% endblock %}
+
+{% block content %}
+<p>
+We would like to invite you to participate in an online study on decision-making. Tasks include an anonymous conversation about certain issues, incentivized decision tasks with real bonuses, and related questionnaire. Your participation is entirely voluntary. You may skip any question you prefer not to answer and may withdraw from the study at any time.
+</p>
+
+<p>
+All your responses will remain strictly confidential. After removing any personally identifiable information, the collected data will be used solely for aggregate analysis and academic research purposes.
+</p>
+
+<p>
+Upon completing the questionnaire in full, you will receive a base compensation of 4 USD. In addition, depending on your decisions and random selection, you may earn an extra bonus ranging from 0 USD to 15 USD, with an estimated average of approximately 3 USD.
+</p>
+
+{{ formfields }}
+
+<button class="otree-btn-next btn btn-primary">Continue</button>
+{% endblock %}

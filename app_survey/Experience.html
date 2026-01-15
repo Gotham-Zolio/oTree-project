@@ -1,0 +1,80 @@
+{% extends "global/Page.html" %}
+
+{% block title %}Feedback - Part 1{% endblock %}
+
+{% block content %}
+<style>
+    .question-card {
+        background: #fff;
+        border: 1px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    .question-label {
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: #2c3e50;
+        margin-bottom: 15px;
+        display: block;
+    }
+    .option-wrapper {
+        background: #f8f9fa;
+        padding: 10px 15px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .form-check-inline { margin-right: 1.5rem; }
+
+    .legend-bar {
+        background: #eef2f7;
+        padding: 10px 5px;
+        border-radius: 6px;
+        margin-bottom: 25px;
+        font-size: 0.8rem;
+        color: #555;
+        display: flex;
+        justify-content: space-between;
+        border: 1px dashed #ced4da;
+    }
+    .legend-item {
+        text-align: center;
+        width: 14%;
+        line-height: 1.2;
+    }
+    .legend-num { font-weight: bold; display: block; color: #333; margin-bottom: 2px;}
+</style>
+
+<p class="lead">Please rate the following statements about the conversation you had earlier.</p>
+
+<div class="legend-bar">
+    <div class="legend-item"><span class="legend-num">1</span>Strongly<br>Disagree</div>
+    <div class="legend-item"><span class="legend-num">2</span><br>Disagree</div>
+    <div class="legend-item"><span class="legend-num">3</span>Somewhat<br>Disagree</div>
+    <div class="legend-item"><span class="legend-num">4</span><br>Neutral</div>
+    <div class="legend-item"><span class="legend-num">5</span>Somewhat<br>Agree</div>
+    <div class="legend-item"><span class="legend-num">6</span><br>Agree</div>
+    <div class="legend-item"><span class="legend-num">7</span>Strongly<br>Agree</div>
+</div>
+
+<div class="question-card">
+    <label class="question-label">1. {{ q1 }}</label>
+    <div class="option-wrapper">
+        {{ form.exp1 }}
+    </div>
+</div>
+
+<div class="question-card">
+    <label class="question-label">2. {{ q2 }}</label>
+    <div class="option-wrapper">
+        {{ form.exp2 }}
+    </div>
+</div>
+
+<div class="mt-4">
+    {{ next_button }}
+</div>
+{% endblock %}

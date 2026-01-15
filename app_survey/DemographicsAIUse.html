@@ -1,0 +1,20 @@
+{% extends "global/Page.html" %}
+{% block title %}AI Use for Personal Topics{% endblock %}
+
+{% block content %}
+<p>
+Thinking about your TOTAL usage of AI tools (including both specialized companions and general assistants like ChatGPT),
+approximately what percentage of your time is spent discussing personal or emotional topics?
+</p>
+
+{{ form.personal_topic_pct }}
+
+<p class="mt-3">
+When you use AI for personal topics, you may briefly describe how frequently you discuss:
+relationships, family, friendships, study/work, emotions, physical health, other.
+</p>
+
+{{ form.personal_ai_topics }}
+
+<button class="otree-btn-next btn btn-primary">Next</button>
+{% endblock %}

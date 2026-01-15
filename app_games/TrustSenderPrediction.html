@@ -1,0 +1,40 @@
+{% extends "global/Page.html" %}
+
+{% block title %}Task {{ player.round_number }}: Prediction{% endblock %}
+
+{% block content %}
+<p class="lead">
+    Bonus Opportunity!
+</p>
+
+<p>
+    You chose to send <b>{{ sent }} tokens</b> to the Receiver.
+    <br>
+    The Receiver will receive <b>{{ tripled }} tokens</b>.
+</p>
+
+<div class="alert alert-success">
+    <b>Earn Extra Tokens:</b>
+    We ask you to guess how many tokens the Receiver will choose to return to you.
+    <br>
+    If your guess is within <b>+/- 5 tokens</b> of the actual amount returned by the Receiver, you will receive a <b>bonus of 10 tokens</b> (if this task is selected for payment).
+</div>
+
+<div class="card p-4">
+    <div class="form-group">
+        <label>How many tokens do you think the Receiver will return to you?</label>
+        <div class="input-group" style="max-width: 300px;">
+            {{ form.trust_prediction }}
+            <div class="input-group-append">
+                <span class="input-group-text">tokens</span>
+            </div>
+        </div>
+        <small class="form-text text-muted">Enter a number between 0 and {{ tripled }}.</small>
+    </div>
+</div>
+
+<div class="mt-4">
+    {{ next_button }}
+</div>
+
+{% endblock %}

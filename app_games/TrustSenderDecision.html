@@ -1,0 +1,59 @@
+{% extends "global/Page.html" %}
+
+{% block title %}Task {{ player.round_number }}: Investment Task{% endblock %}
+
+{% block content %}
+<div class="card bg-light mb-4">
+    <div class="card-body">
+        <h5 class="card-title">📜 Instructions</h5>
+        
+        <p>
+            In this task, two participants are paired together: a <b>Sender</b> and a <b>Receiver</b>.
+        </p>
+        <ul>
+            <li>The <b>Sender</b> starts with <b>100 tokens</b> and decides how many to transfer to the Receiver.</li>
+            <li>
+                <span style="background-color: #fff3cd; padding: 2px 5px; border-radius: 4px;">
+                    <b>🚀 The Multiplier:</b> Any amount transferred is <b>TRIPLED</b> before reaching the Receiver.
+                </span>
+            </li>
+            <li>The <b>Receiver</b> then decides how much of the tripled amount to return to the Sender.</li>
+        </ul>
+        
+        <hr>
+        
+        <p>
+            You have been assigned the role of the <b>Sender</b>.
+        </p>
+        <p>
+            You must decide how much of your endowment to invest in the Receiver.
+            The more you send, the more the total pot grows, but your earnings depend on how much the Receiver chooses to return.
+        </p>
+        
+        <hr>
+        <h6 class="text-secondary">⚠️ Important Game Conditions</h6>
+        <ul class="mb-0 small">
+            <li><b>Anonymous:</b> You will never know who you matched with, nor will they know who matched with you.</li>
+            <li><b>One-Shot:</b> This specific task is played only once. You are matched with a <b>new participant</b> for every different task in this study.</li>
+            <li><b>Blind Decision:</b> The Receiver makes their plan <b>without knowing</b> your choice yet. They have to decide for every possible scenario beforehand.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <b>Payment Note:</b> 
+    The Receiver has already submitted a strategy plan for every possible amount you might send.
+    The system will verify your sent amount, look up the Receiver's pre-made decision, and calculate your earnings.
+</div>
+
+<div class="card p-4">
+    <div class="form-group">
+        <label><b>How many tokens do you want to transfer to the Receiver?</b></label>
+        {{ form.trust_sent }}
+    </div>
+</div>
+
+<div class="mt-4">
+    {{ next_button }}
+</div>
+{% endblock %}

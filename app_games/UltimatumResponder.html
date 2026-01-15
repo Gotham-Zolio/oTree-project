@@ -1,0 +1,69 @@
+{% extends "global/Page.html" %}
+
+{% block title %}Task {{ player.round_number }}: Response Task{% endblock %}
+
+{% block content %}
+<div class="card bg-light mb-4">
+    <div class="card-body">
+        <h5 class="card-title">📜 Instructions</h5>
+        
+        <p>
+            In this task, two participants are paired together: a <b>Proposer</b> and a <b>Responder</b>.
+        </p>
+        <ul>
+            <li>The <b>Proposer</b> receives an endowment of <b>100 tokens</b> and proposes how to split them between the two of you.</li>
+            <li>The <b>Responder</b> reviews the offer and decides whether to <b>Accept</b> or <b>Reject</b> it.</li>
+        </ul>
+        
+        <hr>
+        
+        <p>
+            You have been assigned the role of the <b>Responder</b>.
+        </p>
+        <p>
+            You do not get to decide the split amount, but you have the final say on whether the deal goes through.
+            <ul class="text-danger">
+                <li><b>If you Accept:</b> The Proposer keeps their share, and you receive the offered amount.</li>
+                <li><b>If you Reject:</b> The deal is cancelled. <b>Both you and the Proposer receive 0 tokens.</b></li>
+            </ul>
+        </p>
+
+        <hr>
+        <h6 class="text-secondary">⚠️ Important Game Conditions</h6>
+        <ul class="mb-0 small">
+            <li><b>Anonymous:</b> You will never know who you matched with, nor will they know who matched with you.</li>
+            <li><b>One-Shot:</b> This specific task is played only once. You are matched with a <b>new participant</b> for every different task in this study.</li>
+            <li><b>Blind Decision:</b> The Proposer is making their offer <b>without knowing</b> your minimum acceptance level.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <b>Payment Note:</b> 
+    Since we don't know the Proposer's offer yet, please set your <b>"Lowest Acceptable Amount"</b> now.
+    <ul>
+        <li>Offer &ge; Your Minimum ⮕ <b>Accept</b>.</li>
+        <li>Offer &lt; Your Minimum ⮕ <b>Reject</b> (Both get 0).</li>
+    </ul>
+</div>
+
+<div class="card p-4">
+    <div class="form-group">
+        <label><b>What is the lowest amount (0-100) you are willing to accept?</b></label>
+        <p class="text-muted small">
+            (Any offer lower than this number will be rejected, resulting in 0 earnings.)
+        </p>
+        <div class="input-group" style="max-width: 300px;">
+            {{ form.ultimatum_mao }}
+            <div class="input-group-append">
+                <span class="input-group-text">tokens</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    {{ next_button }}
+</div>
+
+{% endblock %}

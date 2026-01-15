@@ -1,0 +1,83 @@
+{% extends "global/Page.html" %}
+
+{% block title %}Review of Tasks{% endblock %}
+
+{% block content %}
+<style>
+    .question-card {
+        background: #fff;
+        border: 1px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    .question-label {
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: #2c3e50;
+        margin-bottom: 15px;
+        display: block;
+    }
+    .option-wrapper {
+        background: #f8f9fa;
+        padding: 10px 15px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .form-check-inline { margin-right: 1.5rem; }
+
+    /* 粘性图例条 */
+    .legend-bar {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background: #eef2f7;
+        padding: 15px 5px;
+        border-radius: 0 0 6px 6px;
+        margin-bottom: 25px;
+        font-size: 0.8rem;
+        color: #555;
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 2px solid #ced4da;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .legend-item {
+        text-align: center;
+        width: 14%;
+        line-height: 1.2;
+    }
+    .legend-num { font-weight: bold; display: block; color: #333; margin-bottom: 2px;}
+    
+    .lead-text { margin-bottom: 15px; }
+</style>
+
+<p class="lead lead-text">Please rate how much you agree with the following statements.</p>
+
+<div class="legend-bar">
+    <div class="legend-item"><span class="legend-num">1</span>Strongly<br>Disagree</div>
+    <div class="legend-item"><span class="legend-num">2</span><br>Disagree</div>
+    <div class="legend-item"><span class="legend-num">3</span>Somewhat<br>Disagree</div>
+    <div class="legend-item"><span class="legend-num">4</span><br>Neutral</div>
+    <div class="legend-item"><span class="legend-num">5</span>Somewhat<br>Agree</div>
+    <div class="legend-item"><span class="legend-num">6</span><br>Agree</div>
+    <div class="legend-item"><span class="legend-num">7</span>Strongly<br>Agree</div>
+</div>
+
+{% for field in form %}
+    <div class="question-card">
+        <label class="question-label">{{ field.label }}</label>
+        <div class="option-wrapper">
+            {{ field }}
+        </div>
+    </div>
+{% endfor %}
+
+<div class="mt-4">
+    {{ next_button }}
+</div>
+{% endblock %}

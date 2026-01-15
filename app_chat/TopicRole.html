@@ -1,0 +1,18 @@
+{% extends "global/Page.html" %}
+{% block title %}Topic of this Conversation{% endblock %}
+
+{% block content %}
+<p>
+During this 10-minute conversation, please talk with <b>{{ partner }}</b> about <b>{{ topic }}</b>.
+</p>
+
+<div class="card mt-3">
+  <div class="card-body">
+    <p>{{ show_text }}</p>
+  </div>
+</div>
+
+<p class="mt-3">You will now be directed to the chat window to begin the conversation.</p>
+
+<button class="otree-btn-next btn btn-primary">Next</button>
+{% endblock %}

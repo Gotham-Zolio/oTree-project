@@ -1,0 +1,72 @@
+{% extends "global/Page.html" %}
+
+{% block title %}Task {{ player.round_number }}: Allocation Task{% endblock %}
+
+{% block content %}
+
+<div class="card bg-light mb-4">
+    <div class="card-body">
+        <h5 class="card-title">📜 Instructions</h5>
+        
+        <p>
+            In this task, two participants are paired together: a <b>Sender</b> and a <b>Receiver</b>.
+        </p>
+        <ul>
+            <li>The <b>Sender</b> starts with an endowment of <b>100 tokens</b> and has complete control over how to split it.</li>
+            <li>The <b>Receiver</b> has no power to reject. They simply accept whatever amount the Sender decides to give.</li>
+        </ul>
+        
+        <hr>
+        
+        <p>
+            <b>🎲 Role Assignment (50/50 Chance)</b>
+        </p>
+        <p>
+            Unlike the other tasks, your role has not been decided yet.
+            The system will randomly assign your role <b>after</b> you make your decision.
+        </p>
+        <ul>
+            <li><b>50% Chance:</b> You become the <b>Sender</b> (Your decision counts).</li>
+            <li><b>50% Chance:</b> You become the <b>Receiver</b> (You get what the other person sent).</li>
+        </ul>
+
+        <hr>
+        
+        <h6 class="text-secondary">⚠️ Important Game Conditions</h6>
+        <ul class="mb-0 small">
+            <li><b>Anonymous:</b> You will never know who you matched with, nor will they know who matched with you.</li>
+            <li><b>One-Shot:</b> This specific task is played only once. You are matched with a <b>new participant</b> for every different task in this study.</li>
+            <li><b>Independent:</b> If you end up as the Sender, the Receiver cannot influence or reject your decision.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <b>Payment Note:</b>
+    Because we do not know your role yet, please make your decision <b>assuming you are the Sender</b>.
+    <br>
+    If the coin flip makes you the Sender, this decision will determine real payments for both you and your partner.
+</div>
+
+<div class="card p-4">
+    <div class="form-group">
+        <label style="font-size: 1.1rem;">
+            <b>If you are the Sender, how many tokens do you want to give to the Receiver?</b>
+        </label>
+        <div class="input-group mt-2" style="max-width: 300px;">
+            {{ form.dictator_sent }}
+            <div class="input-group-append">
+                <span class="input-group-text">tokens</span>
+            </div>
+        </div>
+        <small class="form-text text-muted">
+            You will keep: 100 - (Amount Sent)
+        </small>
+    </div>
+</div>
+
+<div class="mt-4">
+    {{ next_button }}
+</div>
+
+{% endblock %}

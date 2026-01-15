@@ -1,0 +1,63 @@
+{% extends "global/Page.html" %}
+
+{% block title %}Task {{ player.round_number }}: Proposal Task{% endblock %}
+
+{% block content %}
+<div class="card bg-light mb-4">
+    <div class="card-body">
+        <h5 class="card-title">📜 Instructions</h5>
+        
+        <p>
+            In this task, two participants are paired together: a <b>Proposer</b> and a <b>Responder</b>.
+        </p>
+        <ul>
+            <li>The <b>Proposer</b> receives an endowment of <b>100 tokens</b> and proposes how to split them between the two of you.</li>
+            <li>The <b>Responder</b> reviews the offer and decides whether to <b>Accept</b> or <b>Reject</b> it.</li>
+        </ul>
+        
+        <hr>
+        
+        <p>
+            You have been assigned the role of the <b>Proposer</b>.
+        </p>
+        <p>
+            You must decide how much to offer the Responder.
+            <ul class="text-danger">
+                <li><b>If they Accept:</b> They receive the offer, and you keep the rest (100 - Offer).</li>
+                <li><b>If they Reject:</b> The deal is cancelled. <b>Both of you receive 0 tokens.</b></li>
+            </ul>
+        </p>
+
+        <hr>
+        <h6 class="text-secondary">⚠️ Important Game Conditions</h6>
+        <ul class="mb-0 small">
+            <li><b>Anonymous:</b> You will never know who you matched with, nor will they know who matched with you.</li>
+            <li><b>One-Shot:</b> This specific task is played only once. You are matched with a <b>new participant</b> for every different task in this study.</li>
+            <li><b>Blind Decision:</b> The Responder has set their minimum acceptance level <b>without knowing</b> your offer. They cannot see what you offer before making their decision.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <b>Payment Note:</b> 
+    The Responder has privately set a <b>Minimum Acceptable Offer</b>.
+    If your offer is lower than their minimum, it will be automatically rejected (Payoff = 0).
+</div>
+
+<div class="card p-4">
+    <div class="form-group">
+        <label><b>I offer to the Responder:</b></label>
+        <div class="input-group" style="max-width: 300px;">
+            {{ form.ultimatum_offer }}
+            <div class="input-group-append">
+                <span class="input-group-text">tokens</span>
+            </div>
+        </div>
+        <small class="form-text text-muted">Must be between 0 and 100.</small>
+    </div>
+</div>
+
+<div class="mt-4">
+    {{ next_button }}
+</div>
+{% endblock %}

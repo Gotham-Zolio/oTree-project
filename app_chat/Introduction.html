@@ -1,0 +1,21 @@
+{% extends "global/Page.html" %}
+{% block title %}Introduction to the Conversation Task{% endblock %}
+
+{% block content %}
+<p>
+Thank you for your participation. In the next part of the study, you will engage in a 10-minute text-based conversation with <b>{{ partner }}</b>.
+</p>
+<p>
+Your objective is to: <b>{{ intro_objective }}</b>.
+</p>
+
+<ul>
+  <li><b>Anonymity:</b> Please do not share your name, contact information, or location.</li>
+  <li><b>Conduct:</b> Please communicate in a respectful manner and avoid any inappropriate or harmful language.</li>
+  <li><b>Time Commitment:</b> This conversation is timed for exactly 10 minutes. You will not be able to advance to the next task until the timer ends.</li>
+  <li><b>Engagement Requirement:</b> Please engage in the conversation seriously. You will be asked to evaluate the quality of the conversation after it ends.</li>
+  <li><b>Comfort & Safety:</b> If you feel uncomfortable, you may stop typing and take a break until the timer finishes.</li>
+</ul>
+
+<button class="otree-btn-next btn btn-primary">Next</button>
+{% endblock %}

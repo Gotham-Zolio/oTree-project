@@ -1,0 +1,105 @@
+{% extends "global/Page.html" %}
+
+{% block title %}Task {{ player.round_number }}: Investment Task{% endblock %}
+
+{% block content %}
+<div class="card bg-light mb-4">
+    <div class="card-body">
+        <h5 class="card-title">📜 Instructions</h5>
+        
+        <p>
+            In this task, two participants are paired together: a <b>Sender</b> and a <b>Receiver</b>.
+        </p>
+        <ul>
+            <li>The <b>Sender</b> starts with <b>100 tokens</b> and decides how many to transfer to the Receiver.</li>
+            <li>
+                <span style="background-color: #fff3cd; padding: 2px 5px; border-radius: 4px;">
+                    <b>🚀 The Multiplier:</b> Any amount transferred is <b>TRIPLED</b> before reaching the Receiver.
+                </span>
+            </li>
+            <li>The <b>Receiver</b> then decides how much of the tripled amount to return to the Sender.</li>
+        </ul>
+
+        <hr>
+
+        <p>
+            You have been assigned the role of the <b>Receiver</b>.
+        </p>
+        <p>
+            Since the Sender moves first, you must decide how much to return for every possible scenario.
+        </p>
+        
+        <div class="alert alert-warning small py-2">
+            <b>Note on "0 tokens":</b> 
+            If the Sender chooses to transfer <b>0 tokens</b>, you receive 0, and there is nothing to return. 
+            Therefore, you only need to make decisions for the amounts 25, 50, 75, and 100 below.
+        </div>
+
+        <hr>
+        <h6 class="text-secondary">⚠️ Important Game Conditions</h6>
+        <ul class="mb-0 small">
+            <li><b>Anonymous:</b> You will never know who you matched with, nor will they know who matched with you.</li>
+            <li><b>One-Shot:</b> This specific task is played only once. You are matched with a <b>new participant</b> for every different task in this study.</li>
+            <li><b>Blind Decision:</b> The Sender is making their decision <b>without knowing</b> what you are filling in right now.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <b>Payment Note:</b> 
+    Since you don't know the Sender's choice yet, we ask you to make a plan for <b>every possible non-zero scenario</b>.
+    <br>
+    If this task is selected for payment, we will look at the <b>actual amount</b> the Sender sent, find the matching row below, and implement your decision.
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <b>Your Return Plan</b>
+    </div>
+    <div class="card-body">
+        <div class="p-3 mb-3" style="background-color: #f8f9fa; border-radius: 5px;">
+            <label><b>Scenario 1:</b> Sender sends <b>25</b> ⮕ You receive <b>75 tokens</b>.</label>
+            <br>
+            <small class="text-muted">How much do you want to return to the Sender?</small>
+            <div class="input-group mt-2" style="width: 200px;">
+                {{ form.trust_return_25 }}
+                <div class="input-group-append"><span class="input-group-text">tokens</span></div>
+            </div>
+        </div>
+
+        <div class="p-3 mb-3" style="background-color: #f8f9fa; border-radius: 5px;">
+            <label><b>Scenario 2:</b> Sender sends <b>50</b> ⮕ You receive <b>150 tokens</b>.</label>
+            <br>
+            <small class="text-muted">How much do you want to return to the Sender?</small>
+            <div class="input-group mt-2" style="width: 200px;">
+                {{ form.trust_return_50 }}
+                <div class="input-group-append"><span class="input-group-text">tokens</span></div>
+            </div>
+        </div>
+
+        <div class="p-3 mb-3" style="background-color: #f8f9fa; border-radius: 5px;">
+            <label><b>Scenario 3:</b> Sender sends <b>75</b> ⮕ You receive <b>225 tokens</b>.</label>
+            <br>
+            <small class="text-muted">How much do you want to return to the Sender?</small>
+            <div class="input-group mt-2" style="width: 200px;">
+                {{ form.trust_return_75 }}
+                <div class="input-group-append"><span class="input-group-text">tokens</span></div>
+            </div>
+        </div>
+
+        <div class="p-3 mb-3" style="background-color: #f8f9fa; border-radius: 5px;">
+            <label><b>Scenario 4:</b> Sender sends <b>100</b> ⮕ You receive <b>300 tokens</b>.</label>
+            <br>
+            <small class="text-muted">How much do you want to return to the Sender?</small>
+            <div class="input-group mt-2" style="width: 200px;">
+                {{ form.trust_return_100 }}
+                <div class="input-group-append"><span class="input-group-text">tokens</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-center">
+    {{ next_button }}
+</div>
+{% endblock %}

@@ -1,0 +1,226 @@
+{% extends "global/Page.html" %}
+{% block title %}Chat Window{% endblock %}
+
+{% block content %}
+<style>
+  .chat-wrap { max-width: 900px; margin: 0 auto; }
+  .timer { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; }
+  .info-bar { font-size: 0.9rem; color: #666; margin-bottom: 15px; }
+  .chat-box { 
+    border: 1px solid #ddd; 
+    border-radius: 8px; 
+    padding: 15px; 
+    height: 400px; 
+    overflow-y: auto; 
+    background: #fff; 
+    display: flex;
+    flex-direction: column;
+  }
+  .chat-row { margin: 8px 0; display: flex; }
+  .me { justify-content: flex-end; }
+  .partner { justify-content: flex-start; }
+  
+  .bubble { 
+    padding: 10px 14px; 
+    border-radius: 12px; 
+    max-width: 75%; 
+    word-wrap: break-word;
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+  .bubble-me { background: #007bff; color: white; border-bottom-right-radius: 2px; }
+  .bubble-partner { background: #f1f0f0; color: #333; border-bottom-left-radius: 2px; }
+  
+  .starter-box { 
+    background: #e9ecef; 
+    padding: 12px; 
+    border-radius: 8px; 
+    margin-bottom: 15px; 
+    font-style: italic;
+    color: #495057;
+    text-align: center;
+    border: 1px dashed #ced4da;
+  }
+
+  .error-msg { 
+    color: #dc3545; 
+    font-weight: 600; 
+    display: none; 
+    margin-top: 8px; 
+    font-size: 0.9rem;
+  }
+  
+  .input-area { margin-top: 15px; }
+</style>
+
+<div class="chat-wrap">
+  <div class="d-flex justify-content-between align-items-end mb-2">
+    <div class="timer">Time left: <span id="timeLeft">10:00</span></div>
+    <div class="info-bar">Condition: {{ condition }} | Role: {{ role }}</div>
+  </div>
+
+  <div class="starter-box">
+    {{ starter_text }}
+  </div>
+
+  <div id="chatBox" class="chat-box" aria-live="polite">
+    </div>
+
+  <div id="errorMsg" class="error-msg">
+    Message blocked: Please avoid sharing personal contact information or using inappropriate language.
+  </div>
+
+  <div class="input-group input-area">
+    <input id="msgInput" type="text" class="form-control" placeholder="Type your message here..." autocomplete="off" />
+    <div class="input-group-append">
+      <button id="sendBtn" type="button" class="btn btn-primary">Send</button>
+    </div>
+  </div>
+
+  <input type="hidden" name="chat_log" id="id_chat_log">
+
+  <button id="hiddenSubmit" class="otree-btn-next btn btn-primary" style="display:none;">Next</button>
+</div>
+
+<script>
+(function () {
+  // --- 1. 初始化变量 ---
+  const chatSeconds = js_vars.chatSeconds || 600;
+  const condition = (js_vars.condition || "").trim();
+  
+  // 敏感词库 (示例 - 实际应用建议扩充)
+  const badWords = ["fuck", "shit", "bitch", "asshole", "cunt", "stupid", "idiot"];
+
+  // --- 2. 验证逻辑 ---
+  function looksLikeEmail(text) {
+    // 匹配 xxxx@xxxx.xx
+    return /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(text);
+  }
+
+  function looksLikePhone(text) {
+    // 匹配 10位以上数字，或常规电话格式 xxx-xxx-xxxx
+    // 排除简单的年份或是数字提及，要求比较严格的格式
+    const phoneRegex = /(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4})|(\b\d{10,}\b)/;
+    return phoneRegex.test(text);
+  }
+
+  function containsProfanity(text) {
+    const lower = text.toLowerCase();
+    // 简单匹配单词边界，防止匹配到 substring (e.g. Scunthorpe)
+    return badWords.some(w => {
+       const regex = new RegExp(`\\b${w}\\b`, 'i');
+       return regex.test(lower);
+    });
+  }
+
+  function isBlocked(text) {
+    if (!text) return true;
+    if (looksLikeEmail(text)) return true;
+    if (looksLikePhone(text)) return true;
+    if (containsProfanity(text)) return true;
+    return false;
+  }
+
+  // --- 3. DOM 元素 ---
+  const chatBox = document.getElementById('chatBox');
+  const msgInput = document.getElementById('msgInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const errorMsg = document.getElementById('errorMsg');
+  
+  // --- 4. 核心功能：显示消息 ---
+  function appendMessage(who, text) {
+    const row = document.createElement('div');
+    row.className = 'chat-row ' + (who === 'me' ? 'me' : 'partner');
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble ' + (who === 'me' ? 'bubble-me' : 'bubble-partner');
+    bubble.innerText = text; // 使用 innerText 防止 XSS
+
+    row.appendChild(bubble);
+    chatBox.appendChild(row);
+    
+    // 自动滚动到底部
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  // --- 5. 与后端通信 (LiveSocket) ---
+  // oTree 自动注入 liveRecv 函数来接收后端消息
+  window.liveRecv = function(data) {
+    console.log("DEBUG: liveRecv received:", data);
+    
+    // 能够处理对象或对象数组
+    if (Array.isArray(data)) {
+        data.forEach(function(item) {
+            if (item.type === 'new_message') {
+                appendMessage(item.sender, item.text);
+            }
+        });
+    } else {
+        if (data.type === 'new_message') {
+            appendMessage(data.sender, data.text);
+        }
+    }
+  };
+
+  // --- 6. 发送处理 ---
+  function trySend() {
+    console.log("DEBUG: trySend called");
+    const text = (msgInput.value || "").trim();
+    
+    if (text === "") return;
+
+    // 检查违规内容 (客户端实时反馈)
+    if (isBlocked(text)) {
+      console.log("DEBUG: Message blocked");
+      errorMsg.style.display = 'block';
+      // 3秒后隐藏错误提示
+      setTimeout(() => { errorMsg.style.display = 'none'; }, 3000);
+      return;
+    }
+    
+    // 验证通过，发送给后端
+    errorMsg.style.display = 'none';
+    msgInput.value = "";
+    
+    console.log("DEBUG: Sending via liveSend:", text);
+    // 调用 oTree 的 liveSend
+    liveSend({ 'text': text });
+  }
+
+  // --- 7. 事件监听 ---
+  sendBtn.addEventListener('click', trySend);
+  
+  msgInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      trySend();
+    }
+  });
+
+  // --- 8. 倒计时器 ---
+  const timeLeftEl = document.getElementById('timeLeft');
+  let timeRemaining = chatSeconds;
+
+  function pad(n) { return n < 10 ? '0' + n : n; }
+
+  const timerInterval = setInterval(() => {
+    timeRemaining--;
+    
+    if (timeRemaining <= 0) {
+      clearInterval(timerInterval);
+      timeLeftEl.textContent = "00:00";
+      // 时间到，禁止输入
+      msgInput.disabled = true;
+      sendBtn.disabled = true;
+      // 自动提交
+      document.getElementById('hiddenSubmit').click();
+    } else {
+      const m = Math.floor(timeRemaining / 60);
+      const s = timeRemaining % 60;
+      timeLeftEl.textContent = `${pad(m)}:${pad(s)}`;
+    }
+  }, 1000);
+
+})();
+</script>
+{% endblock %}

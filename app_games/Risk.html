@@ -1,0 +1,65 @@
+{% extends "global/Page.html" %}
+
+{% block title %}Task {{ player.round_number }}: Scenario Selection{% endblock %}
+
+{% block content %}
+<p class="lead">
+    Please make a choice for each of the 4 scenarios below.
+</p>
+
+<div class="alert alert-info">
+    <b>Payment Note:</b> 
+    If this task is selected for payment, the system will <b>randomly select only one</b> of the 4 scenarios below. Your choice in that specific scenario will determine your earnings. 
+    Therefore, you should choose as if every scenario were the one that counts.
+</div>
+
+<table class="table table-bordered table-striped" style="text-align: center; vertical-align: middle;">
+    <thead class="thead-light">
+        <tr>
+            <th>Scenario</th>
+            <th>Option A</th>
+            <th>Option B</th>
+            <th>Your Choice</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td style="vertical-align: middle;">1</td>
+            <td style="vertical-align: middle;"><b>40 tokens</b> for sure</td>
+            <td style="vertical-align: middle;">50% chance of <b>68</b>, 50% chance of <b>0</b></td>
+            <td style="vertical-align: middle;">
+                {{ formfield 'risk_choice_1' label="" }}
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align: middle;">2</td>
+            <td style="vertical-align: middle;"><b>40 tokens</b> for sure</td>
+            <td style="vertical-align: middle;">50% chance of <b>84</b>, 50% chance of <b>0</b></td>
+            <td style="vertical-align: middle;">
+                {{ formfield 'risk_choice_2' label="" }}
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align: middle;">3</td>
+            <td style="vertical-align: middle;"><b>40 tokens</b> for sure</td>
+            <td style="vertical-align: middle;">50% chance of <b>108</b>, 50% chance of <b>0</b></td>
+            <td style="vertical-align: middle;">
+                {{ formfield 'risk_choice_3' label="" }}
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align: middle;">4</td>
+            <td style="vertical-align: middle;"><b>40 tokens</b> for sure</td>
+            <td style="vertical-align: middle;">50% chance of <b>140</b>, 50% chance of <b>0</b></td>
+            <td style="vertical-align: middle;">
+                {{ formfield 'risk_choice_4' label="" }}
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="mt-4 text-center">
+    {{ next_button }}
+</div>
+
+{% endblock %}

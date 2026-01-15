@@ -1,0 +1,72 @@
+{% extends "global/Page.html" %}
+
+{% block title %}Final Question{% endblock %}
+
+{% block content %}
+<style>
+    .question-card {
+        background: #fff;
+        border: 1px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    .question-label {
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: #2c3e50;
+        margin-bottom: 15px;
+        display: block;
+    }
+    .option-wrapper {
+        background: #f8f9fa;
+        padding: 10px 15px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .form-check-inline { margin-right: 1.5rem; }
+
+    .legend-bar {
+        background: #eef2f7;
+        padding: 10px 15px;
+        border-radius: 6px;
+        margin-bottom: 25px;
+        font-size: 0.85rem;
+        color: #555;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        border: 1px dashed #ced4da;
+    }
+    .legend-item {
+        text-align: center;
+        flex: 1;
+        min-width: 60px;
+    }
+    .legend-num { font-weight: bold; display: block; color: #333; margin-bottom: 2px;}
+</style>
+
+<div class="legend-bar">
+    <div class="legend-item"><span class="legend-num">1</span>Not at all</div>
+    <div class="legend-item"><span class="legend-num">2</span>Very little</div>
+    <div class="legend-item"><span class="legend-num">3</span>A little</div>
+    <div class="legend-item"><span class="legend-num">4</span>Moderate</div>
+    <div class="legend-item"><span class="legend-num">5</span>Somewhat</div>
+    <div class="legend-item"><span class="legend-num">6</span>A lot</div>
+    <div class="legend-item"><span class="legend-num">7</span>Completely</div>
+</div>
+
+<div class="question-card">
+    <label class="question-label">{{ form.human_likeness.label }}</label>
+    <div class="option-wrapper">
+        {{ form.human_likeness }}
+    </div>
+</div>
+
+<div class="mt-4">
+    {{ next_button }}
+</div>
+{% endblock %}
