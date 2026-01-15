@@ -197,9 +197,9 @@ class Player(BasePlayer):
         # Try participant.vars first, fallback to database field using field_maybe_none()
         cond = self.participant.vars.get('condition') or self.field_maybe_none('condition')
         if cond == "Group 4":
-            return "various common scientific topics (e.g., from biology, astronomy, or physics)."
+            return "various common scientific topics (e.g., from biology, astronomy, or physics)"
         else:
-            return "something that has recently been bothering you — a worry, a troubling issue, or an event that has made you feel upset."
+            return "something that has recently been bothering you — a worry, a troubling issue, or an event that has made you feel upset"
 
 
 
@@ -407,6 +407,8 @@ class Introduction(Page):
                 # 角色分配逻辑
                 if cond == 'Group 1':
                     p.participant.vars['chat_role'] = None
+                elif cond == 'Group 4':
+                    p.participant.vars['chat_role'] = 'Listener'  # Group 4: AI initiates, user responds
                 else:
                     p.participant.vars['chat_role'] = 'Sharer'
                 
@@ -468,7 +470,8 @@ class TopicRole(Page):
         )
 
 class Chat(Page):
-    timeout_seconds = Constants.chat_seconds
+    form_model = 'player'
+    form_fields = ['chat_log']  # Ensure form submission works
     live_method = live_chat
     
     @staticmethod
@@ -476,7 +479,23 @@ class Chat(Page):
         return not player.participant.vars.get('terminate', False)
     
     @staticmethod
+    def before_next_page(player, timeout_happened):
+        """Ensure chat_log is saved before moving to next page"""
+        # If chat_log is empty, save the collected messages from participant vars
+        if not player.chat_log:
+            # Get messages from the session storage if available
+            messages = player.participant.vars.get('current_chat_messages', [])
+            if messages:
+                import json
+                player.chat_log = json.dumps(messages)
+            else:
+                player.chat_log = ""
+    
+    @staticmethod
     def vars_for_template(player):
+        import time
+        import json
+        
         # Use database field as fallback with field_maybe_none()
         role = player.participant.vars.get('chat_role') or player.field_maybe_none('chat_role')
         cond = player.participant.vars.get('condition') or player.field_maybe_none('condition')
@@ -486,15 +505,38 @@ class Chat(Page):
         # Listener (Group 1, Group 4): Your partner will start text
         if role == "Sharer" and cond in ["Group 1", "Group 2", "Group 3"]:
             starter_text = "Please start the conversation by describing something that has recently been bothering you - a worry, a troubling issue, or an event that has made you feel upset. Your partner's role is to listen and respond to you."
-        elif role == "Sharer" and cond == "Group 4":
-            starter_text = "Please start the conversation about scientific topics. Your partner's role is to listen and respond to you."
         else:  # Listener for Groups 1 and 4
             starter_text = "Your partner will start the conversation. Your role is to listen and respond."
+        
+        # For Group 4 Listener: Generate initial AI message to start conversation
+        initial_ai_message_json = "null"
+        
+        # Check if this is Group 4 Listener and initial message hasn't been generated yet
+        if cond == "Group 4" and role == "Listener":
+            # Use a flag in participant.vars to ensure we only generate once
+            flag_key = 'group4_initial_ai_generated'
+            if not player.participant.vars.get(flag_key):
+                print(f"DEBUG: Generating initial AI message for Group 4 Listener")
+                # Generate opening message from AI (Group 4 is neutral science-focused)
+                ai_text = get_ai_reply(player, [])  # Empty history for opening message
+                timestamp = time.strftime("%H:%M:%S")
+                initial_ai_message = {
+                    'text': ai_text,
+                    'timestamp': timestamp
+                }
+                # Save to chat_log
+                player.chat_log = f"[{timestamp}] Partner: {ai_text}\n"
+                # Convert to JSON string for template
+                initial_ai_message_json = json.dumps(initial_ai_message)
+                # Mark as generated
+                player.participant.vars[flag_key] = True
+                print(f"DEBUG: Initial AI message generated: {initial_ai_message_json}")
             
         return dict(
             role=role,
             condition=cond,
-            starter_text=starter_text
+            starter_text=starter_text,
+            initial_ai_message_json=initial_ai_message_json
         )
     
     @staticmethod

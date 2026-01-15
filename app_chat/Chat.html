@@ -83,6 +83,11 @@
 </div>
 
 <script>
+  // Pass initial AI message from template to JavaScript
+  window.initial_ai_message = {{ initial_ai_message_json|safe }};
+</script>
+
+<script>
 (function () {
   // --- 1. 初始化变量 ---
   const chatSeconds = js_vars.chatSeconds || 600;
@@ -197,14 +202,27 @@
     }
   });
 
-  // --- 8. 倒计时器 ---
+  // --- 8. 页面加载：如果有初始 AI 消息（Group 4），显示它 ---
+  if (window.initial_ai_message && window.initial_ai_message.text) {
+    appendMessage('partner', window.initial_ai_message.text);
+  }
+
+  // --- 9. 倒计时器（持久化，刷新页面后继续计时） ---
   const timeLeftEl = document.getElementById('timeLeft');
-  let timeRemaining = chatSeconds;
+  
+  // 从 sessionStorage 获取开始时间；如果没有则现在开始
+  let startTime = sessionStorage.getItem('chat_start_time');
+  if (!startTime) {
+    startTime = Date.now();
+    sessionStorage.setItem('chat_start_time', startTime);
+  }
+  startTime = parseInt(startTime);
 
   function pad(n) { return n < 10 ? '0' + n : n; }
 
   const timerInterval = setInterval(() => {
-    timeRemaining--;
+    const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+    const timeRemaining = Math.max(0, chatSeconds - elapsedSeconds);
     
     if (timeRemaining <= 0) {
       clearInterval(timerInterval);
@@ -212,6 +230,21 @@
       // 时间到，禁止输入
       msgInput.disabled = true;
       sendBtn.disabled = true;
+      // 清除 sessionStorage
+      sessionStorage.removeItem('chat_start_time');
+      
+      // 填充隐藏的 chat_log 字段以完成表单验证
+      const chatLogInput = document.getElementById('id_chat_log');
+      if (chatLogInput) {
+        // 获取所有消息文本
+        const messages = [];
+        document.querySelectorAll('.bubble').forEach(function(bubble) {
+          messages.push(bubble.innerText);
+        });
+        // 保存为 JSON 字符串（或简单的文本）
+        chatLogInput.value = messages.length > 0 ? JSON.stringify(messages) : "Chat completed";
+      }
+      
       // 自动提交
       document.getElementById('hiddenSubmit').click();
     } else {
