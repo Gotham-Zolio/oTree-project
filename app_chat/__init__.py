@@ -14,7 +14,7 @@ class Constants(BaseConstants):
     name_in_url = 'app_chat'
     players_per_group = None
     num_rounds = 1
-    chat_seconds = 600 # 10min
+    chat_seconds = 6 # 10min
 
     # --- AI Prompts (ENGLISH, as required) ---
     # Group 2 & 3: MindHeart Assistant (same prompt)
@@ -187,9 +187,9 @@ class Player(BasePlayer):
         elif cond == "Group 2":
             return "A conversational partner"  # conceal AI identity
         elif cond == "Group 3":
-            return "AI chatbot"
+            return "An AI chatbot"
         elif cond == "Group 4":
-            return "AI chatbot"
+            return "An AI chatbot"
         else:
             return None
 
@@ -481,6 +481,8 @@ class Chat(Page):
     @staticmethod
     def before_next_page(player, timeout_happened):
         """Ensure chat_log is saved before moving to next page"""
+        print(f"DEBUG Chat.before_next_page: timeout_happened={timeout_happened}, chat_log={player.chat_log[:50] if player.chat_log else 'empty'}")
+        
         # If chat_log is empty, save the collected messages from participant vars
         if not player.chat_log:
             # Get messages from the session storage if available
@@ -488,8 +490,12 @@ class Chat(Page):
             if messages:
                 import json
                 player.chat_log = json.dumps(messages)
+                print(f"DEBUG: Saved messages from participant.vars")
             else:
                 player.chat_log = ""
+                print(f"DEBUG: No messages found, chat_log set to empty string")
+        
+        print(f"DEBUG Chat.before_next_page complete: chat_log length={len(player.chat_log)}")
     
     @staticmethod
     def vars_for_template(player):

@@ -24,7 +24,11 @@ class Constants(BaseConstants):
 TASKS = ['dictator', 'trust', 'ultimatum', 'risk']
 
 class Subsession(BaseSubsession):
-    pass
+    def creating_session(self):
+        """初始化游戏变量，确保app_chat的数据被正确传递"""
+        for player in self.get_players():
+            # 确保参与者变量已初始化
+            ensure_participant_vars(player.participant)
 
 class Group(BaseGroup):
     pass
@@ -75,7 +79,17 @@ def ensure_participant_vars(participant):
         random.shuffle(seq)
         participant.vars['task_sequence'] = seq
         
-    if 'decisions' not in participant.vars: participant.vars['decisions'] = {}
+    # 初始化 decisions 字典，确保所有字段都存在
+    if 'decisions' not in participant.vars: 
+        participant.vars['decisions'] = {
+            'dictator_sent': 0,
+            'trust_sent': 0,
+            'trust_prediction': 0,
+            'trust_return_plan': {},
+            'ultimatum_offer': 0,
+            'ultimatum_mao': 0,
+            'risk_choices': ['A', 'A', 'A', 'A']
+        }
 
 def get_current_task(player):
     seq = player.participant.vars.get('task_sequence', TASKS)
@@ -324,13 +338,14 @@ def compute_final_payoffs(subsession):
 
 # --- Pages ---
 
-class ShuffleWaitPage(WaitPage):
-    template_name = "app_games/ShuffleWaitPage.html"
+class ShuffleWaitPage(Page):
     @staticmethod
-    def is_displayed(player): return player.round_number == 1 and not player.participant.vars.get('terminate', False)
+    def is_displayed(player): 
+        return player.round_number == 1 and not player.participant.vars.get('terminate', False)
+    
     @staticmethod
-    def after_all_players_arrive(group): 
-        for p in group.get_players(): ensure_participant_vars(p.participant)
+    def before_next_page(player, timeout_happened):
+        ensure_participant_vars(player.participant)
 
 class Dictator(Page):
     form_model = 'player'
@@ -338,7 +353,9 @@ class Dictator(Page):
     @staticmethod
     def is_displayed(player): return (not player.participant.vars.get('terminate', False)) and (get_current_task(player) == 'dictator')
     @staticmethod
-    def before_next_page(player, timeout_happened): player.participant.vars['decisions']['dictator_sent'] = player.dictator_sent
+    def before_next_page(player, timeout_happened):
+        ensure_participant_vars(player.participant)
+        player.participant.vars['decisions']['dictator_sent'] = player.dictator_sent
 
 class TrustSenderDecision(Page):
     form_model = 'player'
@@ -348,7 +365,9 @@ class TrustSenderDecision(Page):
         ensure_participant_vars(player.participant)
         return (not player.participant.vars.get('terminate', False)) and (get_current_task(player) == 'trust') and (player.participant.vars.get('trust_role') == 'Sender')
     @staticmethod
-    def before_next_page(player, timeout_happened): player.participant.vars['decisions']['trust_sent'] = player.trust_sent
+    def before_next_page(player, timeout_happened):
+        ensure_participant_vars(player.participant)
+        player.participant.vars['decisions']['trust_sent'] = player.trust_sent
 
 class TrustSenderPrediction(Page):
     form_model = 'player'
@@ -368,7 +387,8 @@ class TrustSenderPrediction(Page):
         )
 
     @staticmethod
-    def before_next_page(player, timeout_happened): 
+    def before_next_page(player, timeout_happened):
+        ensure_participant_vars(player.participant)
         player.participant.vars['decisions']['trust_prediction'] = player.trust_prediction
 
 class TrustReceiverPlan(Page):
@@ -380,6 +400,7 @@ class TrustReceiverPlan(Page):
         return (not player.participant.vars.get('terminate', False)) and (get_current_task(player) == 'trust') and (player.participant.vars.get('trust_role') == 'Receiver')
     @staticmethod
     def before_next_page(player, timeout_happened):
+        ensure_participant_vars(player.participant)
         plan = {0:0, 25:player.trust_return_25, 50:player.trust_return_50, 75:player.trust_return_75, 100:player.trust_return_100}
         player.participant.vars['decisions']['trust_return_plan'] = plan
 
@@ -391,7 +412,9 @@ class UltimatumProposer(Page):
         ensure_participant_vars(player.participant)
         return (not player.participant.vars.get('terminate', False)) and (get_current_task(player) == 'ultimatum') and (player.participant.vars.get('ultimatum_role') == 'Proposer')
     @staticmethod
-    def before_next_page(player, timeout_happened): player.participant.vars['decisions']['ultimatum_offer'] = player.ultimatum_offer
+    def before_next_page(player, timeout_happened):
+        ensure_participant_vars(player.participant)
+        player.participant.vars['decisions']['ultimatum_offer'] = player.ultimatum_offer
 
 class UltimatumResponder(Page):
     form_model = 'player'
@@ -401,7 +424,9 @@ class UltimatumResponder(Page):
         ensure_participant_vars(player.participant)
         return (not player.participant.vars.get('terminate', False)) and (get_current_task(player) == 'ultimatum') and (player.participant.vars.get('ultimatum_role') == 'Responder')
     @staticmethod
-    def before_next_page(player, timeout_happened): player.participant.vars['decisions']['ultimatum_mao'] = player.ultimatum_mao
+    def before_next_page(player, timeout_happened):
+        ensure_participant_vars(player.participant)
+        player.participant.vars['decisions']['ultimatum_mao'] = player.ultimatum_mao
 
 class Risk(Page):
     form_model = 'player'
@@ -410,14 +435,19 @@ class Risk(Page):
     def is_displayed(player): return (not player.participant.vars.get('terminate', False)) and (get_current_task(player) == 'risk')
     @staticmethod
     def before_next_page(player, timeout_happened):
+        ensure_participant_vars(player.participant)
         player.participant.vars['decisions']['risk_choices'] = [player.risk_choice_1, player.risk_choice_2, player.risk_choice_3, player.risk_choice_4]
 
-class ComputePayoffsWaitPage(WaitPage):
-    wait_for_all_groups = True
+class ComputePayoffsWaitPage(Page):
     @staticmethod
-    def is_displayed(player): return player.round_number == Constants.num_rounds and not player.participant.vars.get('terminate', False)
+    def is_displayed(player): 
+        return player.round_number == Constants.num_rounds and not player.participant.vars.get('terminate', False)
+    
     @staticmethod
-    def after_all_players_arrive(subsession): compute_final_payoffs(subsession)
+    def before_next_page(player, timeout_happened):
+        # 计算该玩家所在subsession的最终收益
+        subsession = player.subsession
+        compute_final_payoffs(subsession)
 
 page_sequence = [
     ShuffleWaitPage,

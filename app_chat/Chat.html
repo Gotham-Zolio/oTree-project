@@ -78,8 +78,6 @@
   </div>
 
   <input type="hidden" name="chat_log" id="id_chat_log">
-
-  <button id="hiddenSubmit" class="otree-btn-next btn btn-primary" style="display:none;">Next</button>
 </div>
 
 <script>
@@ -233,20 +231,48 @@
       // 清除 sessionStorage
       sessionStorage.removeItem('chat_start_time');
       
-      // 填充隐藏的 chat_log 字段以完成表单验证
+      // 填充 chat_log 字段以完成表单验证
       const chatLogInput = document.getElementById('id_chat_log');
       if (chatLogInput) {
-        // 获取所有消息文本
-        const messages = [];
-        document.querySelectorAll('.bubble').forEach(function(bubble) {
-          messages.push(bubble.innerText);
-        });
-        // 保存为 JSON 字符串（或简单的文本）
-        chatLogInput.value = messages.length > 0 ? JSON.stringify(messages) : "Chat completed";
+        // 确保chat_log字段有内容，即使为空也要设为占位符
+        if (!chatLogInput.value) {
+          chatLogInput.value = "Chat completed";
+        }
       }
       
-      // 自动提交
-      document.getElementById('hiddenSubmit').click();
+      // 延迟提交以确保DOM更新完成
+      setTimeout(function() {
+        console.log("Timer reached 0, starting form submission process");
+        
+        // 方法1：尝试找到oTree的Next按钮并点击
+        const nextBtn = document.querySelector('button[type="submit"]');
+        if (nextBtn) {
+          console.log("Found and clicking submit button");
+          nextBtn.click();
+          console.log("Submit button clicked");
+        } else {
+          console.log("No submit button found, trying to find form");
+          // 方法2：直接提交form
+          const form = document.querySelector('form');
+          if (form) {
+            console.log("Found form, attempting to submit");
+            console.log("Form has " + form.elements.length + " elements");
+            
+            // 确保所有必要的字段都已填充
+            for (let i = 0; i < form.elements.length; i++) {
+              if (form.elements[i].name === 'chat_log') {
+                console.log("chat_log field value: " + form.elements[i].value);
+              }
+            }
+            
+            // 直接提交
+            form.submit();
+            console.log("Form.submit() called");
+          } else {
+            console.error("Could not find form");
+          }
+        }
+      }, 100);
     } else {
       const m = Math.floor(timeRemaining / 60);
       const s = timeRemaining % 60;

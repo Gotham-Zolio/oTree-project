@@ -1,7 +1,15 @@
-{% extends "otree/WaitPage.html" %}
+{% extends "global/Page.html" %}
 
 {% block title %}Preparing Tasks{% endblock %}
 
 {% block content %}
     <p>Please wait while the system prepares the tasks.</p>
+    
+    <button id="autoSubmitBtn" class="otree-btn-next btn btn-primary" style="display:none;">Next</button>
+    
+    <script>
+        window.onload = function() {
+            document.getElementById("autoSubmitBtn").click();
+        };
+    </script>
 {% endblock %}
