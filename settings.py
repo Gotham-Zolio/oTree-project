@@ -1,5 +1,9 @@
 # settings.py
+import os
 from os import environ
+
+# Railway 生产环境检测
+PRODUCTION = os.getenv('ENVIRONMENT') == 'production' or os.getenv('RAILWAY_ENVIRONMENT_NAME') == 'production'
 
 SESSION_CONFIGS = [
     dict(
@@ -31,3 +35,23 @@ DEMO_PAGE_INTRO_HTML = ""
 SECRET_KEY = environ.get('OTREE_SECRET_KEY', 'dev-secret-key')
 
 INSTALLED_APPS = ['otree']
+
+# ==================== Railway 生产环境配置 ====================
+if PRODUCTION:
+    DEBUG = False
+    # 允许 Railway 域名和自定义域名访问
+    ALLOWED_HOSTS = [
+        'otree-project.railway.app',
+        '*.railway.app',
+        'localhost',
+        '127.0.0.1',
+    ]
+    # 使用 Railway 的静态文件存储
+    STATIC_ROOT = os.path.join(os.path.dirname(__file__), '_static_root')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+else:
+    # 开发环境
+    DEBUG = True
+    ALLOWED_HOSTS = ['*']
