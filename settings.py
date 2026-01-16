@@ -36,6 +36,8 @@ SECRET_KEY = environ.get('OTREE_SECRET_KEY', 'dev-secret-key')
 
 INSTALLED_APPS = ['otree']
 
+ROOT_URLCONF = 'otree.urls'
+
 # ==================== Railway 生产环境配置 ====================
 if PRODUCTION:
     DEBUG = False
