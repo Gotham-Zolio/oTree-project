@@ -46,8 +46,8 @@ if PRODUCTION:
         'localhost',
         '127.0.0.1',
     ]
-    # 使用静态文件存储
-    STATIC_ROOT = os.path.join(os.path.dirname(__file__), '_static')
+    # 使用静态文件存储 - 使用绝对路径确保在 WSGI 环境中能正确找到
+    STATIC_ROOT = '/home/gotham/oTree-project/_static'
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
