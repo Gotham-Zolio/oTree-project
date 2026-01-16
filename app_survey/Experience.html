@@ -48,7 +48,10 @@
     .legend-num { font-weight: bold; display: block; color: #333; margin-bottom: 2px;}
 </style>
 
-<p class="lead">Please rate the following statements about the conversation you had earlier.</p>
+<p class="lead">
+    The following questions are about your feelings and experiences related to the 10-minute conversation you just had. 
+    Please rate the following statements based on your true feelings.
+</p>
 
 <div class="legend-bar">
     <div class="legend-item"><span class="legend-num">1</span>Strongly<br>Disagree</div>
@@ -61,14 +64,14 @@
 </div>
 
 <div class="question-card">
-    <label class="question-label">1. {{ q1 }}</label>
+    <label class="question-label">{{ q1 }}</label>
     <div class="option-wrapper">
         {{ form.exp1 }}
     </div>
 </div>
 
 <div class="question-card">
-    <label class="question-label">2. {{ q2 }}</label>
+    <label class="question-label">{{ q2 }}</label>
     <div class="option-wrapper">
         {{ form.exp2 }}
     </div>

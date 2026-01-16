@@ -14,7 +14,7 @@ class Constants(BaseConstants):
     name_in_url = 'app_chat'
     players_per_group = None
     num_rounds = 1
-    chat_seconds = 6 # 10min
+    chat_seconds = 60 # 10min
 
     # --- AI Prompts (ENGLISH, as required) ---
     # Group 2 & 3: MindHeart Assistant (same prompt)
@@ -36,7 +36,7 @@ class Constants(BaseConstants):
     - Do not claim to be a professional psychological counselor; please refer to yourself as "your AI partner".
     - If risk of self-harm or harm to others is detected, please gently send: "Thank you for trusting me. Such pain requires more professional support.." and provide psychological aid hotline numbers.
 
-    Suggested opening line: "Is there anything you'd like to chat about today? Whether it's a happy moment or a small annoyance, I'm here to listen carefully~"
+    Suggested opening line: "Is there anything you'd like to chat about today? I'm here to listen carefully~"
 
     Correct Response Example:
     User: Every time I try to do something, I fail. I feel like I'm completely useless.
@@ -183,23 +183,33 @@ class Player(BasePlayer):
         # Try participant.vars first, fallback to database field using field_maybe_none()
         cond = self.participant.vars.get('condition') or self.field_maybe_none('condition')
         if cond == "Group 1":
-            return "Another human participant randomly matched to you"
+            return "another human participant randomly matched to you"
         elif cond == "Group 2":
-            return "A conversational partner"  # conceal AI identity
+            return "a conversational partner"  # conceal AI identity
         elif cond == "Group 3":
-            return "An AI chatbot"
+            return "an AI chatbot"
         elif cond == "Group 4":
-            return "An AI chatbot"
+            return "an AI chatbot"
         else:
             return None
 
     def get_topic_label(self):
         # Try participant.vars first, fallback to database field using field_maybe_none()
         cond = self.participant.vars.get('condition') or self.field_maybe_none('condition')
+        role = self.participant.vars.get('chat_role') or self.field_maybe_none('chat_role')
+        
         if cond == "Group 4":
-            return "various common scientific topics (e.g., from biology, astronomy, or physics)"
+            topic = "various common scientific topics (e.g., from biology, astronomy, or physics)"
         else:
-            return "something that has recently been bothering you — a worry, a troubling issue, or an event that has made you feel upset"
+            # Group 1, 2, 3
+            if cond == "Group 1" and role == "Listener":
+                # 【修改点】Listener 是听别人讲，所以 topic 是“困扰对方的事”
+                topic = "something that has recently been bothering them — a worry, a troubling issue, or an event that has made them feel upset"
+            else:
+                # Sharer (或与 AI 聊天的人) 是讲自己的事
+                topic = "something that has recently been bothering you — a worry, a troubling issue, or an event that has made you feel upset"
+        
+        return topic
 
 
 
@@ -467,7 +477,9 @@ class TopicRole(Page):
         role = player.participant.vars.get('chat_role')
         
         # Generate role-specific instructions per SCREEN 2.2 (Topic and Role Instructions)
-        if role == "Sharer" and cond in ["Group 1", "Group 2", "Group 3"]:
+        if cond == "Group 4":
+             show_text = "Your partner will start the conversation. Your role is to engage in the discussion."
+        elif role == "Sharer" and cond in ["Group 1", "Group 2", "Group 3"]:
             show_text = "Please start the conversation by describing something that has recently been bothering you - a worry, a troubling issue, or an event that has made you feel upset. Your partner's role is to listen and respond to you."
         else:
             show_text = "Your partner will start the conversation. Your role is to listen and respond."

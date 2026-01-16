@@ -3,6 +3,7 @@
 
 {% block content %}
 <style>
+    /* 基础卡片样式 */
     .question-card {
         background: #fff;
         border: 1px solid #e3e6f0;
@@ -11,54 +12,108 @@
         margin-bottom: 20px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     }
-    .question-label {
-        font-weight: 600;
-        font-size: 1.05rem;
-        color: #2c3e50;
-        margin-bottom: 10px;
-        display: block;
-    }
-    .text-muted { font-size: 0.9rem; margin-bottom: 10px; display: block; }
-    
-    /* 调整多选框的样式 */
-    .form-check { margin-bottom: 8px; }
     
     /* 隐藏区域样式 */
     #conditional-section {
-        display: none; /* 默认隐藏 */
+        display: none; 
         background-color: #f8f9fa;
         border-left: 5px solid #007bff;
         padding: 20px;
         margin-top: 30px;
         border-radius: 5px;
+        animation: fadeIn 0.5s;
     }
-    
-    .matrix-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 0;
-        border-bottom: 1px solid #eee;
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
-    .matrix-label { width: 40%; font-size: 0.95rem; }
-    .matrix-options { width: 55%; display: flex; justify-content: space-between; }
-    
-    .legend-bar {
-        background: #eef2f7;
-        padding: 5px;
-        border-radius: 4px;
-        margin-bottom: 15px;
-        font-size: 0.8rem;
-        color: #555;
-        display: flex;
-        justify-content: space-between;
+
+    /* --- 量表矩阵样式 --- */
+    .likert-table {
+        width: 100%;
         text-align: center;
+        margin-top: 15px;
+        border-collapse: separate; 
+        border-spacing: 0;
+    }
+    
+    .likert-table th {
+        font-weight: normal;
+        padding-bottom: 10px;
+        vertical-align: bottom;
+        width: 9%;
+        color: #555;
+        font-size: 0.85rem;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .likert-table th.col-question {
+        width: 37%;
+    }
+
+    .header-num {
+        display: block;
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 2px;
+    }
+    
+    .header-text {
+        display: block;
+        font-size: 0.75rem;
+        line-height: 1.1;
+        color: #777;
+    }
+
+    .likert-table td {
+        padding: 15px 5px;
+        border-bottom: 1px solid #eee;
+        vertical-align: middle;
+    }
+
+    .likert-table td.question-text {
+        text-align: left;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .likert-table tr:hover {
+        background-color: #f1f3f5;
+    }
+
+    input[type='radio'] {
+        transform: scale(1.3);
+        cursor: pointer;
+    }
+    
+    .radio-cell {
+        cursor: pointer;
+    }
+    
+    .other-input {
+        margin-top: 5px;
+        font-size: 0.9rem;
+        width: 95%;
+    }
+    
+    .clear-btn {
+        cursor: pointer;
+        color: #adb5bd;
+        font-size: 1.2rem;
+        padding: 0 10px;
+        transition: color 0.2s;
+    }
+    .clear-btn:hover {
+        color: #dc3545;
     }
 </style>
 
 <p class="lead">
     For the final part of the study, we would like to collect some basic demographic information for statistical analysis.
     All of your responses will be kept strictly confidential and anonymized.
+    This information will not be used to identify you personally. Please answer the following questions.
 </p>
 
 <div class="question-card">{{ formfield 'age' }}</div>
@@ -82,11 +137,11 @@
 </div>
 
 <div id="conditional-section">
-    <h5 class="mb-3">Detailed AI Usage</h5>
+    <h5 class="mb-3 text-primary">Detailed AI Usage</h5>
     
     <div class="question-card">
-        <label class="question-label">{{ form.ai_personal_pct.label }}</label>
-        <span class="text-muted">(Please exclude functional tasks like writing code, drafting emails, or searching for information. Focus only on the time spent on personal conversation.)</span>
+        <label class="font-weight-bold mb-2">{{ form.ai_personal_pct.label }}</label>
+        <span class="text-muted small mb-3 d-block">(Please exclude functional tasks like writing code, drafting emails, or searching for information. Focus only on the time spent on personal conversation.)</span>
         <div class="input-group" style="max-width: 200px;">
             {{ form.ai_personal_pct }}
             <div class="input-group-append">
@@ -96,50 +151,99 @@
     </div>
 
     <div class="question-card">
-        <label class="question-label">When you use AI for personal topics, how frequently do you discuss each of the following issues?</label>
-        <span class="text-muted">Please rate on a scale of 1 to 7, where <b>1 = Never</b> and <b>7 = Very Frequently</b>.</span>
+        <label class="font-weight-bold mb-3">When you use AI for personal topics, how frequently do you discuss each of the following issues?</label>
         
-        <div class="legend-bar">
-            <div style="width:14%">1<br>Never</div>
-            <div style="width:14%">2</div>
-            <div style="width:14%">3</div>
-            <div style="width:14%">4</div>
-            <div style="width:14%">5</div>
-            <div style="width:14%">6</div>
-            <div style="width:14%">7<br>Freq</div>
-        </div>
-        
-        <div class="matrix-row">
-            <div class="matrix-label">Relationship with spouse/partner</div>
-            <div class="matrix-options">{{ form.topic_spouse }}</div>
-        </div>
-        <div class="matrix-row">
-            <div class="matrix-label">Relationship with parents/family</div>
-            <div class="matrix-options">{{ form.topic_family }}</div>
-        </div>
-        <div class="matrix-row">
-            <div class="matrix-label">Friendships</div>
-            <div class="matrix-options">{{ form.topic_friends }}</div>
-        </div>
-        <div class="matrix-row">
-            <div class="matrix-label">Study/Work/Career development</div>
-            <div class="matrix-options">{{ form.topic_work }}</div>
-        </div>
-        <div class="matrix-row">
-            <div class="matrix-label">Personal emotions (e.g., anxiety, sadness)</div>
-            <div class="matrix-options">{{ form.topic_emotions }}</div>
-        </div>
-        <div class="matrix-row">
-            <div class="matrix-label">Physical health problems</div>
-            <div class="matrix-options">{{ form.topic_health }}</div>
-        </div>
-        <div class="matrix-row">
-            <div class="matrix-label">Other</div>
-            <div class="matrix-options">{{ form.topic_other_freq }}</div>
-        </div>
-        <div class="mt-2">
-            {{ form.topic_other_text }}
-        </div>
+        <table class="likert-table">
+            <thead>
+                <tr>
+                    <th class="col-question"></th>
+                    <th><span class="header-num">1</span><span class="header-text">Never</span></th>
+                    <th><span class="header-num">2</span><span class="header-text">Very Rarely</span></th>
+                    <th><span class="header-num">3</span><span class="header-text">Rarely</span></th>
+                    <th><span class="header-num">4</span><span class="header-text">Sometimes</span></th>
+                    <th><span class="header-num">5</span><span class="header-text">Often</span></th>
+                    <th><span class="header-num">6</span><span class="header-text">Frequently</span></th>
+                    <th><span class="header-num">7</span><span class="header-text">Very Freq.</span></th>
+                    <th style="width: 30px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="question-text">Relationship with spouse/partner</td>
+                    {% for i in "1234567" %}
+                    <td class="radio-cell" onclick="selectRadio('topic_spouse', '{{ i }}')">
+                        <input type="radio" name="topic_spouse" value="{{ i }}" required>
+                    </td>
+                    {% endfor %}
+                    <td></td>
+                </tr>
+
+                <tr>
+                    <td class="question-text">Relationship with parents/family</td>
+                    {% for i in "1234567" %}
+                    <td class="radio-cell" onclick="selectRadio('topic_family', '{{ i }}')">
+                        <input type="radio" name="topic_family" value="{{ i }}" required>
+                    </td>
+                    {% endfor %}
+                    <td></td>
+                </tr>
+
+                <tr>
+                    <td class="question-text">Friendships</td>
+                    {% for i in "1234567" %}
+                    <td class="radio-cell" onclick="selectRadio('topic_friends', '{{ i }}')">
+                        <input type="radio" name="topic_friends" value="{{ i }}" required>
+                    </td>
+                    {% endfor %}
+                    <td></td>
+                </tr>
+
+                <tr>
+                    <td class="question-text">Study/Work/Career development</td>
+                    {% for i in "1234567" %}
+                    <td class="radio-cell" onclick="selectRadio('topic_work', '{{ i }}')">
+                        <input type="radio" name="topic_work" value="{{ i }}" required>
+                    </td>
+                    {% endfor %}
+                    <td></td>
+                </tr>
+
+                <tr>
+                    <td class="question-text">Personal emotions (e.g., anxiety, sadness)</td>
+                    {% for i in "1234567" %}
+                    <td class="radio-cell" onclick="selectRadio('topic_emotions', '{{ i }}')">
+                        <input type="radio" name="topic_emotions" value="{{ i }}" required>
+                    </td>
+                    {% endfor %}
+                    <td></td>
+                </tr>
+
+                <tr>
+                    <td class="question-text">Physical health problems</td>
+                    {% for i in "1234567" %}
+                    <td class="radio-cell" onclick="selectRadio('topic_health', '{{ i }}')">
+                        <input type="radio" name="topic_health" value="{{ i }}" required>
+                    </td>
+                    {% endfor %}
+                    <td></td>
+                </tr>
+
+                <tr>
+                    <td class="question-text">
+                        Other (Optional):
+                        <input type="text" name="topic_other_text" class="form-control form-control-sm other-input" placeholder="Specify topic...">
+                    </td>
+                    {% for i in "1234567" %}
+                    <td class="radio-cell" onclick="selectRadio('topic_other_freq', '{{ i }}')">
+                        <input type="radio" name="topic_other_freq" value="{{ i }}">
+                    </td>
+                    {% endfor %}
+                    <td title="Clear selection">
+                        <span class="clear-btn" onclick="clearRadioRow('topic_other_freq')">&times;</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -148,10 +252,27 @@
 </div>
 
 <script>
+    function selectRadio(name, value) {
+        const radios = document.getElementsByName(name);
+        for (let radio of radios) {
+            if (radio.value === value) {
+                radio.checked = true;
+                break;
+            }
+        }
+    }
+    
+    function clearRadioRow(name) {
+        const radios = document.getElementsByName(name);
+        for (let radio of radios) {
+            radio.checked = false;
+        }
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
         const section = document.getElementById('conditional-section');
+        const inputsInHiddenSection = section.querySelectorAll('input, select, textarea');
         
-        // Inputs
         const companionRadios = document.querySelectorAll('input[name="ai_companion"]');
         const generalRadios = document.querySelectorAll('input[name="ai_general_personal"]');
         
@@ -159,34 +280,30 @@
             let companionYes = false;
             let generalUsed = false;
             
-            // Check Q12 (Companion) - Value "Yes"
             for (const radio of companionRadios) {
-                if (radio.checked && radio.value === "Yes") {
-                    companionYes = true;
-                }
+                if (radio.checked && radio.value === "Yes") companionYes = true;
             }
             
-            // Check Q13 (General) - Any value that is NOT "No"
-            // The logic in doc: "Display... ONLY if the answer to Q12 OR Q13 is 'Yes'"
-            // Note: Q13 has "No", "Yes, I often...", "Yes, but only rarely..."
             for (const radio of generalRadios) {
-                if (radio.checked && radio.value !== "No") {
-                    generalUsed = true;
-                }
+                if (radio.checked && radio.value !== "No") generalUsed = true;
             }
             
             if (companionYes || generalUsed) {
                 section.style.display = 'block';
+                inputsInHiddenSection.forEach(input => {
+                    if (input.name !== 'topic_other_freq' && input.name !== 'topic_other_text') {
+                        input.required = true;
+                    }
+                });
             } else {
                 section.style.display = 'none';
+                inputsInHiddenSection.forEach(input => input.required = false);
             }
         }
         
-        // Add listeners
         companionRadios.forEach(radio => radio.addEventListener('change', checkCondition));
         generalRadios.forEach(radio => radio.addEventListener('change', checkCondition));
         
-        // Initial check (in case user goes back)
         checkCondition();
     });
 </script>

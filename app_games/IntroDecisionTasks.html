@@ -1,0 +1,47 @@
+{% extends "global/Page.html" %}
+
+{% block title %}Introduction to the Decision Tasks{% endblock %}
+
+{% block content %}
+<div class="card bg-light mb-4">
+    <div class="card-body">
+        <p class="lead">
+            In the following section, you will participate in a series of <b>independent decision-making tasks</b> and complete corresponding questionnaires.
+        </p>
+        <p>
+            Your decisions in these tasks will affect a <b>real monetary bonus</b> for both you (and possibly another anonymous human participant).
+        </p>
+    </div>
+</div>
+
+<div class="alert alert-primary">
+    <h5>💰 Payment Method</h5>
+    <hr>
+    <p>
+        After all tasks are completed, the system will <b>randomly select one of them</b> to be the "task-for-payment."
+    </p>
+    <p>
+        The earnings you make in that selected task will be converted to real money and added to your base payment as a bonus.
+    </p>
+    <p class="font-weight-bold">
+        The conversion rate is: 20 tokens = $1 USD.
+    </p>
+</div>
+
+<div class="alert alert-warning">
+    <h5>⚠️ Important Notes</h5>
+    <ul>
+        <li>
+            Because <b>any</b> of the tasks could be selected for real payment, it is in your best interest to treat each decision seriously.
+        </li>
+        <li>
+            For each task, you will be anonymously paired with a <b>new, different, anonymous human participant</b>.
+        </li>
+    </ul>
+</div>
+
+<div class="text-center mt-4">
+    {{ next_button }}
+</div>
+
+{% endblock %}
