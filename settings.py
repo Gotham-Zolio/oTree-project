@@ -31,6 +31,10 @@ ADMIN_PASSWORD = environ.get('OTREE_ADMIN_PASSWORD', 'demo')
 DEMO_PAGE_INTRO_HTML = ""
 SECRET_KEY = environ.get('OTREE_SECRET_KEY', 'dev-secret-key')
 
+# 必需的 Django 配置
+ROOT_URLCONF = 'urls'
+INSTALLED_APPS = ['otree']
+
 # 设置数据库
 DATABASES = {
     "default": {
