@@ -46,8 +46,8 @@ if PRODUCTION:
         'localhost',
         '127.0.0.1',
     ]
-    # 使用 Railway 的静态文件存储
-    STATIC_ROOT = os.path.join(os.path.dirname(__file__), '_static_root')
+    # 使用静态文件存储
+    STATIC_ROOT = os.path.join(os.path.dirname(__file__), '_static')
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
