@@ -1,4 +1,3 @@
-otree==6.0.4
+otree
 gunicorn
-psycopg2-binary
 dj-database-url

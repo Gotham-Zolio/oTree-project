@@ -1,10 +1,6 @@
-import os
+# settings.py
 from os import environ
 
-# 生产环境检测
-PRODUCTION = os.getenv("RAILWAY_ENVIRONMENT_NAME") == "production"
-
-# oTree session 配置
 SESSION_CONFIGS = [
     dict(
         name='materials_experiment',
@@ -16,45 +12,37 @@ SESSION_CONFIGS = [
 ]
 
 SESSION_CONFIG_DEFAULTS = dict(
-    real_world_currency_per_point=0.05,
+    real_world_currency_per_point=0.05,  # 20 tokens (points) = $1
     participation_fee=4.00,
     doc="",
 )
 
 LANGUAGE_CODE = 'en'
+
 REAL_WORLD_CURRENCY_CODE = 'USD'
 USE_POINTS = True
 POINTS_CUSTOM_NAME = 'tokens'
+
 ADMIN_USERNAME = 'admin'
+
 ADMIN_PASSWORD = environ.get('OTREE_ADMIN_PASSWORD', 'demo')
+
+# 允许所有主机访问，或根据需要自定义
+ALLOWED_HOSTS = ['*']
+
+# 静态文件收集目录
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_ROOT = os.path.join(BASE_DIR, '_static')
+
+# 数据库配置，优先使用PostgreSQL（推荐Railway部署时设置DATABASE_URL环境变量）
+import dj_database_url
+DATABASES = {
+    'default': dj_database_url.config(default=f'sqlite:///{os.path.join(BASE_DIR, "db.sqlite3")}')
+}
+
 DEMO_PAGE_INTRO_HTML = ""
+
 SECRET_KEY = environ.get('OTREE_SECRET_KEY', 'dev-secret-key')
 
-# Django 配置
-ROOT_URLCONF = 'urls'
 INSTALLED_APPS = ['otree']
-
-# 数据库配置
-if "DATABASE_URL" in environ:
-    import dj_database_url
-    DATABASES = {
-        "default": dj_database_url.config(conn_max_age=600)
-    }
-else:
-    # SQLite 本地备用
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": os.path.join(os.path.dirname(__file__), "db.sqlite3"),
-        }
-    }
-
-# 静态文件
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(os.path.dirname(__file__), "_static")
-
-# 生产环境设置
-DEBUG = not PRODUCTION
-ALLOWED_HOSTS = [
-    "*",  # Railway 自动生成域名
-]
