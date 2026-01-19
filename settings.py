@@ -1,12 +1,10 @@
-# settings.py
 import os
 from os import environ
-import dj_database_url
 
-# Railway 生产环境检测（最稳方案）
-PRODUCTION = os.getenv('RAILWAY_ENVIRONMENT_NAME') is not None
+# 生产环境检测
+PRODUCTION = os.getenv("RAILWAY_ENVIRONMENT_NAME") == "production"
 
-# 基本 oTree 配置
+# oTree session 配置
 SESSION_CONFIGS = [
     dict(
         name='materials_experiment',
@@ -27,28 +25,36 @@ LANGUAGE_CODE = 'en'
 REAL_WORLD_CURRENCY_CODE = 'USD'
 USE_POINTS = True
 POINTS_CUSTOM_NAME = 'tokens'
-
 ADMIN_USERNAME = 'admin'
 ADMIN_PASSWORD = environ.get('OTREE_ADMIN_PASSWORD', 'demo')
-
 DEMO_PAGE_INTRO_HTML = ""
 SECRET_KEY = environ.get('OTREE_SECRET_KEY', 'dev-secret-key')
 
-# 必需的 Django / oTree 配置
+# Django 配置
 ROOT_URLCONF = 'urls'
 INSTALLED_APPS = ['otree']
 
-# 数据库配置（自动适配 Railway Postgres / 本地 sqlite）
-DATABASES = {
-    'default': dj_database_url.config(default='sqlite:///db.sqlite3')
-}
+# 数据库配置
+if "DATABASE_URL" in environ:
+    import dj_database_url
+    DATABASES = {
+        "default": dj_database_url.config(conn_max_age=600)
+    }
+else:
+    # SQLite 本地备用
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(os.path.dirname(__file__), "db.sqlite3"),
+        }
+    }
 
-# 静态文件配置
+# 静态文件
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(os.path.dirname(__file__), '_static')
+STATIC_ROOT = os.path.join(os.path.dirname(__file__), "_static")
 
-# 生产 / 开发环境通用配置
+# 生产环境设置
 DEBUG = not PRODUCTION
-
-# Railway / 云部署最稳配置，避免 403
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    "*",  # Railway 自动生成域名
+]
