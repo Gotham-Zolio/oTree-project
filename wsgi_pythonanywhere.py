@@ -1,6 +1,5 @@
 import os
 import sys
-import django
 
 # 设置工作目录
 project_path = '/home/gotham/oTree-project'
@@ -20,9 +19,6 @@ os.environ['ENVIRONMENT'] = 'production'
 
 # 设置 Django 设置模块
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-
-# 初始化 Django
-django.setup()
 
 # 导入 WSGI 应用
 from django.core.wsgi import get_wsgi_application
