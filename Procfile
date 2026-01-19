@@ -1,3 +1,1 @@
-web: otree prodserver1of2
-worker: otree prodserver2of2
-release: otree migrate
+web: gunicorn otree.asgi:application --bind 0.0.0.0:$PORT

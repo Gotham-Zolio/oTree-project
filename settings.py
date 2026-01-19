@@ -1,9 +1,10 @@
 # settings.py
 import os
 from os import environ
+import dj_database_url
 
-# Railway 生产环境检测
-PRODUCTION = os.getenv('ENVIRONMENT') == 'production' or os.getenv('RAILWAY_ENVIRONMENT_NAME') == 'production'
+# Railway 生产环境检测（最稳方案）
+PRODUCTION = os.getenv('RAILWAY_ENVIRONMENT_NAME') is not None
 
 # 基本 oTree 配置
 SESSION_CONFIGS = [
@@ -26,40 +27,28 @@ LANGUAGE_CODE = 'en'
 REAL_WORLD_CURRENCY_CODE = 'USD'
 USE_POINTS = True
 POINTS_CUSTOM_NAME = 'tokens'
+
 ADMIN_USERNAME = 'admin'
 ADMIN_PASSWORD = environ.get('OTREE_ADMIN_PASSWORD', 'demo')
+
 DEMO_PAGE_INTRO_HTML = ""
 SECRET_KEY = environ.get('OTREE_SECRET_KEY', 'dev-secret-key')
 
-# 必需的 Django 配置
+# 必需的 Django / oTree 配置
 ROOT_URLCONF = 'urls'
 INSTALLED_APPS = ['otree']
 
-# 设置数据库
+# 数据库配置（自动适配 Railway Postgres / 本地 sqlite）
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(os.path.dirname(__file__), "db.sqlite3"),
-    }
+    'default': dj_database_url.config(default='sqlite:///db.sqlite3')
 }
 
 # 静态文件配置
 STATIC_URL = '/static/'
-if PRODUCTION:
-    STATIC_ROOT = '/home/gotham/oTree-project/_static'
-else:
-    STATIC_ROOT = os.path.join(os.path.dirname(__file__), '_static')
+STATIC_ROOT = os.path.join(os.path.dirname(__file__), '_static')
 
-# 生产环境配置
-if PRODUCTION:
-    DEBUG = False
-    ALLOWED_HOSTS = [
-        'otree-project.railway.app',
-        '*.railway.app',
-        'gotham.pythonanywhere.com',
-        'localhost',
-        '127.0.0.1',
-    ]
-else:
-    DEBUG = True
-    ALLOWED_HOSTS = ['*']
+# 生产 / 开发环境通用配置
+DEBUG = not PRODUCTION
+
+# Railway / 云部署最稳配置，避免 403
+ALLOWED_HOSTS = ['*']
